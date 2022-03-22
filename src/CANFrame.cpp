@@ -6,7 +6,7 @@
 //
 
 #include "CANFrame.hpp"
-#include <strings.h>
+#include <string.h>
 
 CANFrame::CANFrame(){
 	frames.clear();

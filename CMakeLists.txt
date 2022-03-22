@@ -4,7 +4,7 @@ SET (CMAKE_CXX_COMPILER            "clang++")
 
 cmake_minimum_required(VERSION 3.0)
 
-project(obdtool)
+project(canhacker)
 
 set(SOURCES
 	src/main.cpp
@@ -21,16 +21,16 @@ set(SOURCES
 
 )
 
-add_executable(obdtool ${SOURCES})
+add_executable(canhacker ${SOURCES})
 
 
-set_target_properties(obdtool PROPERTIES
+set_target_properties(canhacker PROPERTIES
 				CXX_STANDARD 17
 				CXX_EXTENSIONS OFF
 				)
  
-set_target_properties(obdtool PROPERTIES
-			OUTPUT_NAME "obdtool"
+set_target_properties(canhacker PROPERTIES
+			OUTPUT_NAME "canhacker"
 			)
 
 			  
@@ -39,9 +39,9 @@ find_package(Threads REQUIRED)
 
 include_directories(/usr/include)
 link_directories(/usr/lib)
-target_link_libraries(obdtool  PRIVATE Threads::Threads)
+target_link_libraries(canhacker  PRIVATE Threads::Threads)
 
-target_include_directories(obdtool
+target_include_directories(canhacker
 	PRIVATE
 	src
 )
