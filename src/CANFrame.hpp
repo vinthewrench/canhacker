@@ -7,11 +7,23 @@
 
 #pragma once
 
-#include "can.h"
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <mutex>
+
+
+#if defined(__APPLE__)
+// used for cross compile on osx
+#include "can.h"
+
+#else
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#endif
 
 using namespace std;
 
