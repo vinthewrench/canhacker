@@ -14,8 +14,8 @@
 		2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */; };
 		2EFC244B27E92B2200DB9D1F /* CmdLineRegistry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244427E92B2200DB9D1F /* CmdLineRegistry.cpp */; };
 		2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244727E92B2200DB9D1F /* CmdLineHelp.cpp */; };
-		2EFC245127E946E200DB9D1F /* ScreenMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244F27E946E200DB9D1F /* ScreenMgr.cpp */; };
-		2EFC245427E94C1500DB9D1F /* CANFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC245227E94C1500DB9D1F /* CANFrame.cpp */; };
+		2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */; };
+		2EFC245E27E95D0900DB9D1F /* CANFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC245D27E95D0900DB9D1F /* CANFrame.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,10 +51,10 @@
 		2EFC244627E92B2200DB9D1F /* CmdLineMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CmdLineMgr.hpp; path = src/CmdLineMgr.hpp; sourceTree = "<group>"; };
 		2EFC244727E92B2200DB9D1F /* CmdLineHelp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CmdLineHelp.cpp; path = src/CmdLineHelp.cpp; sourceTree = "<group>"; };
 		2EFC244827E92B2200DB9D1F /* CmdLineHelp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CmdLineHelp.hpp; path = src/CmdLineHelp.hpp; sourceTree = "<group>"; };
-		2EFC244F27E946E200DB9D1F /* ScreenMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ScreenMgr.cpp; sourceTree = "<group>"; };
-		2EFC245027E946E200DB9D1F /* ScreenMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ScreenMgr.hpp; sourceTree = "<group>"; };
-		2EFC245227E94C1500DB9D1F /* CANFrame.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CANFrame.cpp; sourceTree = "<group>"; };
-		2EFC245327E94C1500DB9D1F /* CANFrame.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CANFrame.hpp; sourceTree = "<group>"; };
+		2EFC245927E95D0000DB9D1F /* ScreenMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ScreenMgr.hpp; path = src/ScreenMgr.hpp; sourceTree = "<group>"; };
+		2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ScreenMgr.cpp; path = src/ScreenMgr.cpp; sourceTree = "<group>"; };
+		2EFC245C27E95D0900DB9D1F /* CANFrame.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CANFrame.hpp; path = src/CANFrame.hpp; sourceTree = "<group>"; };
+		2EFC245D27E95D0900DB9D1F /* CANFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CANFrame.cpp; path = src/CANFrame.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,8 +95,8 @@
 				2EFC242427E926DC00DB9D1F /* CANbus.hpp */,
 				2EFC242627E926DC00DB9D1F /* GMLAN.cpp */,
 				2EFC242227E926DC00DB9D1F /* GMLAN.hpp */,
-				2EFC245227E94C1500DB9D1F /* CANFrame.cpp */,
-				2EFC245327E94C1500DB9D1F /* CANFrame.hpp */,
+				2EFC245D27E95D0900DB9D1F /* CANFrame.cpp */,
+				2EFC245C27E95D0900DB9D1F /* CANFrame.hpp */,
 				2EFC243827E928F000DB9D1F /* CommonDefs.hpp */,
 				2EFC243927E9292B00DB9D1F /* Utils.hpp */,
 			);
@@ -132,8 +132,8 @@
 				2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */,
 				2EFC244427E92B2200DB9D1F /* CmdLineRegistry.cpp */,
 				2EFC244527E92B2200DB9D1F /* CmdLineRegistry.hpp */,
-				2EFC244F27E946E200DB9D1F /* ScreenMgr.cpp */,
-				2EFC245027E946E200DB9D1F /* ScreenMgr.hpp */,
+				2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */,
+				2EFC245927E95D0000DB9D1F /* ScreenMgr.hpp */,
 			);
 			name = "Cmdline Stuff";
 			sourceTree = "<group>";
@@ -198,9 +198,9 @@
 				2EFC242827E926DC00DB9D1F /* main.cpp in Sources */,
 				2EFC244927E92B2200DB9D1F /* CmdLineBuffer.cpp in Sources */,
 				2EFC242727E926DC00DB9D1F /* CANbus.cpp in Sources */,
-				2EFC245127E946E200DB9D1F /* ScreenMgr.cpp in Sources */,
+				2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */,
 				2EFC242927E926DC00DB9D1F /* GMLAN.cpp in Sources */,
-				2EFC245427E94C1500DB9D1F /* CANFrame.cpp in Sources */,
+				2EFC245E27E95D0900DB9D1F /* CANFrame.cpp in Sources */,
 				2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */,
 				2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */,
 			);

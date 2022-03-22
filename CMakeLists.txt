@@ -8,9 +8,17 @@ project(obdtool)
 
 set(SOURCES
 	src/main.cpp
+	src/CANFrame.cpp
 	src/CANbus.cpp
-	src/ODBIIsocket.cpp
+	src/CmdLineBuffer.cpp
+	src/CmdLineHelp.cpp
+	src/CmdLineMgr.cpp
+	src/CmdLineRegistry.cpp
+	src/GMLAN.cpp
 	src/OBDII.cpp
+	src/ODBIIsocket.cpp
+	src/ScreenMgr.cpp
+
 )
 
 add_executable(obdtool ${SOURCES})
