@@ -16,10 +16,11 @@ CANFrame::~CANFrame(){
 }
 
 
+
 void  CANFrame::saveFrame(can_frame_t frame, long timeStamp){
 	
  
-	bool updated = false;
+	bool updated = true;
   
 	// is it an existing frame?
 	if(frames.count(frame.can_id)) {
@@ -32,7 +33,9 @@ void  CANFrame::saveFrame(can_frame_t frame, long timeStamp){
 			
 			oldFrame.timeStamp = timeStamp;
 			oldFrame.avgTime = newAvg;
+			updated = false;
 		}
+		  
 	}
 	else { // it changed
 		timed_can_frame newframe;
@@ -44,15 +47,13 @@ void  CANFrame::saveFrame(can_frame_t frame, long timeStamp){
 		memcpy(newframe.data, frame.data, frame.can_dlc);
 		newframe.len = frame.can_dlc;
 		frames[frame.can_id] = newframe;
-		updated = false;
 	}
 	 
 	if(updated){
-		printf("%s\n",hexDumpFrame(frame).c_str());
+		printf("%s\r\n",hexDumpFrame(frame).c_str());
 	}
  
 }
-
 
 
 void CANFrame::clearFrames(){

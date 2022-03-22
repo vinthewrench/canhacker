@@ -15,8 +15,6 @@ set(SOURCES
 	src/CmdLineMgr.cpp
 	src/CmdLineRegistry.cpp
 	src/GMLAN.cpp
-	src/OBDII.cpp
-	src/ODBIIsocket.cpp
 	src/ScreenMgr.cpp
 
 )

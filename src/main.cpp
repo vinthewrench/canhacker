@@ -135,7 +135,11 @@ int main(int argc, const char * argv[]) {
 		cmdLineMgr.processChar(c);
 	}
 	
+	
 	// Restore previous TTY settings
 	tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_backup);
+
+	gmlan.stop();
+	
 	return 0;
 }
