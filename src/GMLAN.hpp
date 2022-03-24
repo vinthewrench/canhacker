@@ -2,20 +2,22 @@
 //  GMLAN.hpp
 //  canhacker
 //
-//  Created by Vincent Moscaritolo on 3/21/22.
+//  Created by Vincent Moscaritolo on 3/23/22.
 //
 
 
-#include "CANbus.hpp"
-#include "CANFrame.hpp"
-
+#include "CanProtocol.hpp"
 #pragma once
-
-using namespace std;
-
-
-class GMLAN : public CANbus, CANFrame {
-	void rcvFrame(can_frame_t frame, long timeStamp );
+ 
+class GMLAN: public CanProtocol {
+	
+public:
+   
+	virtual string nameForFrame(can_frame_t frame);
+	virtual string descriptionForFrame(can_frame_t frame);
+  
+private:
+	
 };
 
- 
+

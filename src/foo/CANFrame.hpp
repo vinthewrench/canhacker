@@ -66,19 +66,19 @@ struct  timed_can_frame{
 };
  
 
- 
-class CANFrame {
-public:
-
-	CANFrame();
-	~CANFrame();
-	
-	void saveFrame(can_frame_t frame, long timeStamp);
-	void clearFrames();
-	
-	
-private:
-	map<canid_t, timed_can_frame>  frames;
-};
-
+//
+//class CANFrame {
+//public:
+//
+//	CANFrame();
+//	~CANFrame();
+//
+//	void saveFrame(can_frame_t frame, long timeStamp);
+//	void clearFrames();
+//	
+//
+//private:
+//	map<canid_t, timed_can_frame>  frames;
+//};
+//
 

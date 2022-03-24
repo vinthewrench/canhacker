@@ -6,6 +6,9 @@
 //
 
 #include "CANbus.hpp"
+#include <iostream>
+#include <sstream>
+#include <fstream>
 
 
 CANbus::CANbus(){
@@ -20,6 +23,7 @@ CANbus::~CANbus(){
 	_isSetup = false;
 
 }
+
 
 bool CANbus::begin(const char *ifname,  int * errorOut){
  	
@@ -134,7 +138,6 @@ void CANbus::run() {
 		if (FD_ISSET(_fd, &readSet)){
 			struct can_frame frame;
 
-			
 			size_t nbytes = read(_fd, &frame, sizeof(struct can_frame));
 
 			if(nbytes >= sizeof(struct can_frame)){
@@ -142,7 +145,7 @@ void CANbus::run() {
  				struct timeval tv;
 				gettimeofday(&tv, NULL);
 				long timestamp = (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
-				rcvFrame(frame, timestamp);
+	//			rcvFrame(frame, timestamp);
 			}
 		 
 			if(nbytes == 0){ // shutdown
@@ -158,4 +161,89 @@ void CANbus::run() {
 	}
 	_fd = -1;
 
+}
+
+bool CANbus::readFramesFromFile(string filePath, int * errorOut){
+	std::ifstream	ifs;
+	bool 				statusOk = false;
+	
+ 
+	if(filePath.empty())
+			return false;
+ 
+	uint32_t number = 0;
+	try{
+		string line;
+	
+		// open the file
+		ifs.open(filePath, ios::in);
+		if(!ifs.is_open()) {
+			if(errorOut) *errorOut = errno;
+			return false;
+		}
+			
+		while ( std::getline(ifs, line) ) {
+			
+			number++;
+			
+			bool failed = false;
+			
+			struct can_frame frame;
+			struct timeval tv;
+			long timestamp = 0;
+			
+//			size_t nbytes = read(_fd, &frame, sizeof(struct can_frame));
+//
+//			if(nbytes >= sizeof(struct can_frame)){
+//
+//				struct timeval tv;
+//				gettimeofday(&tv, NULL);
+//				long timestamp = (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
+//				rcvFrame(frame, timestamp);
+//
+//			timed_frame frame;
+//
+			const char *p = line.c_str() ;
+			int n;
+			char canport[20];
+			
+			if( sscanf(p,"(%ld.%d) %s%x#%n",
+						  &tv.tv_sec,
+						  &tv.tv_usec,
+						  canport,
+						  &frame.can_id,
+						  &n) != 4) continue;
+			p = p+n;
+			
+			frame.len = 0;
+			while(*p) {
+				uint8_t b1;
+		
+				if(sscanf(p, "%02hhx", &b1) != 1){
+					failed = true;
+					break;
+				}
+				
+				frame.data[frame.len++] = b1;
+				p+=2;
+				if(frame.len > CAN_MAX_DLEN) {
+					failed = true;
+					break;
+				}
+			}
+			if(!failed){
+	//			rcvFrame(frame, timestamp);
+			}
+ 		}
+ 
+		statusOk = true;
+		ifs.close();
+	}
+	catch(std::ifstream::failure &err) {
+		
+		printf("readDumpFile:FAIL: %s", err.what());
+		statusOk = false;
+	}
+	
+	return statusOk;
 }
