@@ -33,7 +33,7 @@
 #define VEHICLE_SPEED 0x3E9
  
  // derived from GMW8762
-map<uint, string> knownPid = {
+static map<uint, string> knownPid = {
 { 0x0C1, "Driven Wheel Rotational Status"},
 { 0x0C5, "Non Driven Wheel Rotational Status"},
 { TRAN_ROT, "Transmission Output Rotational Status"},

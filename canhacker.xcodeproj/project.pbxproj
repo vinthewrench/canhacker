@@ -18,6 +18,9 @@
 		2EFC246827EA30C100DB9D1F /* FrameMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246627EA30C100DB9D1F /* FrameMgr.cpp */; };
 		2EFC246C27EA7E6A00DB9D1F /* CanBusMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246A27EA7E6A00DB9D1F /* CanBusMgr.cpp */; };
 		2EFC247227EBCA6A00DB9D1F /* GMLAN.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */; };
+		2EFC247927EC05C700DB9D1F /* Wranger2010.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */; };
+		2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC247A27ECC67300DB9D1F /* jeep.log */; };
+		2EFC248327ECE25F00DB9D1F /* FrameDumper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +31,7 @@
 			dstSubfolderSpec = 16;
 			files = (
 				2EFC246427EA2CFB00DB9D1F /* chevy.log in CopyFiles */,
+				2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */,
 				2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -62,6 +66,11 @@
 		2EFC246E27EBC90700DB9D1F /* CanProtocol.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = CanProtocol.hpp; path = src/CanProtocol.hpp; sourceTree = "<group>"; };
 		2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = GMLAN.cpp; path = src/GMLAN.cpp; sourceTree = "<group>"; };
 		2EFC247127EBCA6A00DB9D1F /* GMLAN.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = GMLAN.hpp; path = src/GMLAN.hpp; sourceTree = "<group>"; };
+		2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Wranger2010.cpp; path = src/Wranger2010.cpp; sourceTree = "<group>"; };
+		2EFC247827EC05C700DB9D1F /* Wranger2010.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Wranger2010.hpp; path = src/Wranger2010.hpp; sourceTree = "<group>"; };
+		2EFC247A27ECC67300DB9D1F /* jeep.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = jeep.log; sourceTree = "<group>"; };
+		2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FrameDumper.cpp; path = src/FrameDumper.cpp; sourceTree = "<group>"; };
+		2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = FrameDumper.hpp; path = src/FrameDumper.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +108,8 @@
 			isa = PBXGroup;
 			children = (
 				2EFC242527E926DC00DB9D1F /* main.cpp */,
+				2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */,
+				2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */,
 				2EFC246727EA30C100DB9D1F /* FrameMgr.hpp */,
 				2EFC246627EA30C100DB9D1F /* FrameMgr.cpp */,
 				2EFC246B27EA7E6A00DB9D1F /* CanBusMgr.hpp */,
@@ -106,6 +117,8 @@
 				2EFC246E27EBC90700DB9D1F /* CanProtocol.hpp */,
 				2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */,
 				2EFC247127EBCA6A00DB9D1F /* GMLAN.hpp */,
+				2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */,
+				2EFC247827EC05C700DB9D1F /* Wranger2010.hpp */,
 				2EFC243827E928F000DB9D1F /* CommonDefs.hpp */,
 				2EFC243927E9292B00DB9D1F /* Utils.hpp */,
 			);
@@ -152,6 +165,7 @@
 			children = (
 				2EFC246227EA292100DB9D1F /* chevy.log */,
 				2EFC246327EA292100DB9D1F /* chevy1.log */,
+				2EFC247A27ECC67300DB9D1F /* jeep.log */,
 			);
 			path = CANFiles;
 			sourceTree = "<group>";
@@ -214,9 +228,11 @@
 			files = (
 				2EFC244B27E92B2200DB9D1F /* CmdLineRegistry.cpp in Sources */,
 				2EFC242827E926DC00DB9D1F /* main.cpp in Sources */,
+				2EFC248327ECE25F00DB9D1F /* FrameDumper.cpp in Sources */,
 				2EFC244927E92B2200DB9D1F /* CmdLineBuffer.cpp in Sources */,
 				2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */,
 				2EFC246C27EA7E6A00DB9D1F /* CanBusMgr.cpp in Sources */,
+				2EFC247927EC05C700DB9D1F /* Wranger2010.cpp in Sources */,
 				2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */,
 				2EFC247227EBCA6A00DB9D1F /* GMLAN.cpp in Sources */,
 				2EFC246827EA30C100DB9D1F /* FrameMgr.cpp in Sources */,

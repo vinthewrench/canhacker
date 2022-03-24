@@ -11,6 +11,7 @@
 #include <fstream>
 
 #include "GMLAN.hpp"
+#include  "Wranger2010.hpp"
 
 CANBusMgr *CANBusMgr::sharedInstance = NULL;
 
@@ -33,7 +34,7 @@ CANBusMgr::~CANBusMgr(){
 
 }
 
-bool CANBusMgr::registerHandler(string ifName, CanProtocol *protocol) {
+bool CANBusMgr::registerHandler(string ifName) {
 	
 	// is it an already registered ?
  	if(_interfaces.count(ifName))
@@ -42,8 +43,7 @@ bool CANBusMgr::registerHandler(string ifName, CanProtocol *protocol) {
 	interfaceInfo_t ifInfo;
 	ifInfo.fd = -1;
 	ifInfo.ifName = ifName;
-	ifInfo.protocol = protocol;
-	
+ 
 	_interfaces[ifName] = ifInfo;
 	
 	return true;
@@ -134,8 +134,8 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 
 bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
-	GMLAN gmlan;
-
+//	printf("\x1b[2J\x1b[0;0H\x1b[?25l");
+	
 	std::ifstream	ifs;
 	bool 				statusOk = false;
 	
@@ -143,6 +143,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
 	FrameMgr* frameMgr = FrameMgr::shared();
  
+	frameMgr->clearFrames("");
 	if(filePath.empty())
 			return false;
  
@@ -156,7 +157,6 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 			if(errorOut) *errorOut = errno;
 			return false;
 		}
-			
 		
 		while ( std::getline(ifs, line) ) {
 			
@@ -215,14 +215,15 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 				}
 			}
 			if(!failed){
-				frameMgr->saveFrame(string(canport), &gmlan, frame, timestamp);
+				frameMgr->saveFrame(string(canport), frame, timestamp);
+				usleep(500);
 			}
 		}
  
 		statusOk = true;
 		ifs.close();
 		
-		frameMgr->dumpFrames();
+	//	frameMgr->dumpFrames();
 	}
 	catch(std::ifstream::failure &err) {
 		
@@ -230,6 +231,8 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 		statusOk = false;
 	}
 	
+//	printf("\x1b[70;0H\x1b[?25h");
+
 	return statusOk;
 }
 

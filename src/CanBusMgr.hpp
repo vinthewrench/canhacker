@@ -22,8 +22,7 @@
 
 #include "CommonDefs.hpp"
 #include "FrameMgr.hpp"
-#include "CanProtocol.hpp"
-
+ 
 using namespace std;
  
 class CANBusMgr {
@@ -41,7 +40,7 @@ public:
 	CANBusMgr();
   ~CANBusMgr();
  	
-	bool registerHandler(string ifName,  CanProtocol *protocol = NULL);
+	bool registerHandler(string ifName);
 	void unRegisterHandler(string ifName);
 
 	bool start(string ifName,int *error = NULL);
@@ -61,7 +60,6 @@ private:
 	typedef struct {
 		int 				fd;
 		string			ifName;
-		CanProtocol		*protocol;
 	} interfaceInfo_t;
 
 	map<string, interfaceInfo_t> _interfaces;
