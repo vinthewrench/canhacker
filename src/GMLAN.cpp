@@ -6,13 +6,7 @@
 //
 
 #include "GMLAN.hpp"
-
-#include <map>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <string>
+#include "FrameDB.hpp"
 
 #define PLAT_GEN_STAT	0x1F1
 
@@ -30,7 +24,7 @@
  
 #define ENGINE_GEN_STAT_5 0x4D1
 #define FUEL_SYSTEM_2  0x1EF
-#define VEHICLE_SPEED 0x3E9
+#define VEHICLE_SPEED_DIST 0x3E9
  
  // derived from GMW8762
 static map<uint, string> knownPid = {
@@ -74,7 +68,7 @@ static map<uint, string> knownPid = {
 { 0x3C9, "Platform Immobilizer Data"},
 { ENGINE_GEN_STAT_2, "Engine General Status 2"},
 { 0x3E1, "Engine_BAS_Status_1"},
-{ VEHICLE_SPEED, "Vehicle Speed and Distance"},
+{ VEHICLE_SPEED_DIST, "Vehicle Speed and Distance"},
 { 0x3ED, "Vehicle_Limit_Speed_Control_Cmd"},
 { 0x3F1, "Platform Engine Control Request"},
 { 0x3F9, "Engine General Status 3"},
@@ -98,6 +92,65 @@ static map<uint, string> knownPid = {
 };
 
 
+
+GMLAN::GMLAN(){
+}
+ 
+
+void GMLAN::registerSchema(FrameDB* db){
+	
+	db->addSchema( _value_key_map[ENGINE_RPM],
+					  {"RPM", "Engine RPM",	FrameDB::RPM});
+	
+	db->addSchema( _value_key_map[ENGINE_RUNNING],
+					  {"Running", "Engine Run Active",	FrameDB::BOOL});
+	
+	db->addSchema( _value_key_map[FUEL_CONSUPTION],
+					  {"Consume", "Instantaneous Fuel Consumption Rate", FrameDB::LPH});
+
+	db->addSchema( _value_key_map[THROTTLE_POS],
+					  {"Pedal", "Throttle Pedal Position",FrameDB::PERCENT});
+	
+	db->addSchema( _value_key_map[FAN_SPEED],
+					  {"Fan", "Fan Speed Percent", FrameDB::PERCENT});
+	
+	db->addSchema( _value_key_map[TEMP_COOLANT],
+					  {"Temp", "Coolant Temperature", FrameDB::DEGREES_C});
+	
+	db->addSchema( _value_key_map[TEMP_TRANSMISSION],
+					  {"Trans Temp", "Transmission Temperature", FrameDB::DEGREES_C});
+	
+	db->addSchema( _value_key_map[PRESSURE_OIL],
+					  {"Oil", "Engine Oil Pressure", FrameDB::KPA});
+	
+	db->addSchema( _value_key_map[VEHICLE_SPEED],
+					  {"Speed", "Vehicle Speed", FrameDB::KPH});
+	
+	db->addSchema( _value_key_map[MASS_AIR_FLOW],
+					  {"MAF", "Mass Air Flow", FrameDB::GPS});
+ 
+	db->addSchema( _value_key_map[BAROMETRIC_PRESSURE],
+					  {"Baro", "Barometric Pressure Absolute", FrameDB::KPA});
+	
+	db->addSchema( _value_key_map[TEMP_AIR_INTAKE],
+					  {"Air In", "Engine Intake Air Temperature", FrameDB::DEGREES_C});
+	
+	db->addSchema( _value_key_map[TEMP_AIR_AMBIENT],
+					  {"Air Amb", "Outside Air Temperature", FrameDB::DEGREES_C});
+	
+	db->addSchema( _value_key_map[TRANS_GEAR],
+					  {"Gear", "Transmission Estimated Gear", FrameDB::STRING});
+	
+ }
+
+string_view GMLAN::keyForValueKey(int valueKey) {
+	
+	if(valueKey >= value_keys_t::begin && valueKey <= value_keys_t::end)
+		return _value_key_map[ static_cast<value_keys_t>( valueKey)];
+	
+  return "";}
+ 
+
 string GMLAN::nameForFrame(can_frame_t frame){
 	
 	return "";
@@ -111,3 +164,200 @@ string GMLAN::descriptionForFrame(can_frame_t frame){
 
 	return name;
 }
+ 
+
+
+void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	
+	
+	switch(frame.can_id) {
+
+		case PLAT_GEN_STAT:
+			processPlatGenStatus(db, frame,when,eTag);
+			break;
+			
+		case ENGINE_GEN_STAT:
+			processEngineGenStatus(db, frame,when,eTag);
+			break;
+			
+		case ENGINE_GEN_STAT_1:
+			processEngineGenStatus1(db, frame,when,eTag);
+			break;
+		
+		case ENGINE_GEN_STAT_2:
+			processEngineGenStatus2(db, frame,when,eTag);
+			break;
+
+		case ENGINE_GEN_STAT_3:
+			processEngineGenStatus3(db, frame,when,eTag);
+			break;
+
+		case ENGINE_GEN_STAT_5:
+			processEngineGenStatus5(db, frame,when,eTag);
+			break;
+	
+		case FUEL_SYSTEM_2:
+			processFuelSystemRequest2(db, frame,when,eTag);
+			break;
+		
+		case ENGINE_GEN_STAT_4:
+			processEngineGenStatus4(db, frame,when,eTag);
+			break;
+
+		case TRANS_STAT_3:
+			processTransmissionStatus3(db, frame,when,eTag);
+			break;
+
+		case TRANS_STAT_2:
+			processTransmissionStatus2(db, frame,when,eTag);
+			break;
+ 
+		case PLAT_CONF:
+			processPlatformConfiguration(db, frame,when,eTag);
+			break;
+		
+		case TRAN_ROT:
+			processTransOutRotation(db, frame,when,eTag);
+			break;
+
+		case VEHICLE_SPEED:
+			processVehicleSpeed(db, frame,when,eTag);
+			break;
+
+			
+		default:
+		  break;
+	};
+	
+}
+
+
+
+void GMLAN::processPlatGenStatus(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+};
+
+void GMLAN::processEngineGenStatus(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+};
+
+void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+	bool running =  frame.data[0] & 0x80;
+	db->updateValue(_value_key_map[ENGINE_RUNNING], to_string(running), when, eTag);
+
+	int rpm = 	frame.data[1] <<8 | frame.data[2];
+	rpm = rpm / 4;
+	db->updateValue(_value_key_map[ENGINE_RPM], to_string(rpm), when, eTag);
+ 
+ };
+
+void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	float tPos = ((frame.data[1])* 100)/255;
+	db->updateValue(_value_key_map[THROTTLE_POS], to_string((int)tPos),when, eTag);
+
+	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
+	db->updateValue(_value_key_map[FUEL_CONSUPTION], to_string(ifc),when, eTag);
+	
+};
+
+void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+	float fan = ((frame.data[1])* 100)/255;
+	db->updateValue(_value_key_map[FAN_SPEED], to_string((int)fan),when, eTag);
+
+};
+
+void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	float oilpress =  (frame.data[2] * 4)  * 0.145038;
+	db->updateValue(_value_key_map[PRESSURE_OIL], to_string(oilpress),when, eTag);
+};
+
+
+
+void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	float maf =  ((frame.data[2])  <<8 | frame.data[3]) * 0.01;
+	db->updateValue(_value_key_map[MASS_AIR_FLOW], to_string(maf),when, eTag);
+
+
+};
+
+void GMLAN::processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+	float baro		= 	(frame.data[1]  / 2.0);
+	db->updateValue(_value_key_map[BAROMETRIC_PRESSURE], to_string(baro),when, eTag);
+ 
+	float coolTemp = 	frame.data[2]  - 40;
+	db->updateValue(_value_key_map[TEMP_COOLANT], to_string(coolTemp),when, eTag);
+
+	float airIn 	=	frame.data[3]  - 40;
+	db->updateValue(_value_key_map[TEMP_AIR_INTAKE], to_string(airIn),when, eTag);
+
+	float airAmb =  	(frame.data[4] *.5) - 40;
+	db->updateValue(_value_key_map[TEMP_AIR_AMBIENT], to_string(airAmb),when, eTag);
+
+};
+
+void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+	bool gearValid =  !(frame.data[0] & 0x10);
+
+	if(gearValid){
+		uint8_t gear = frame.data[0] & 0x0F;
+		
+		string gearCode[] = {
+			"NotSupported",
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+			"6",
+			"7",
+			"8",
+			"??",
+			"??",
+			"xx",
+			"CVTForward",
+			"N",
+			"R",
+			"P"
+		};
+		
+		db->updateValue(_value_key_map[TRANS_GEAR], gearCode[gear] ,when, eTag);
+
+	}
+};
+
+void GMLAN::processTransmissionStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	float transTemp =  frame.data[1]  - 40  ;
+	db->updateValue(_value_key_map[TEMP_TRANSMISSION], to_string(transTemp),when, eTag);
+
+};
+
+
+
+void GMLAN::processPlatformConfiguration(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+};
+
+void GMLAN::processTransOutRotation(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+
+};
+
+void GMLAN::processVehicleSpeed(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	
+	bool speedValid = (frame.data[0] & 0x80) == 0x00;
+	bool distValid = (frame.data[2] & 0x40) == 0x00;
+
+	if(speedValid) {
+		float speed	= (((frame.data[0] & 0x7F) <<8)  | frame.data[1]) * 0.015625;
+		db->updateValue(_value_key_map[VEHICLE_SPEED], to_string(speed),when, eTag);
+	}
+	
+//	if(distValid) {
+//		float dist	= (((frame.data[2] & 0x1F) <<8)  | frame.data[3]) / 8;
+//		db->updateValue(_value_key_map[dist], to_string(speed),when, eTag);
+//
+//	}
+};

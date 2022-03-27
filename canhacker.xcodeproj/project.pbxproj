@@ -15,12 +15,16 @@
 		2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */; };
 		2EFC246427EA2CFB00DB9D1F /* chevy.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC246227EA292100DB9D1F /* chevy.log */; };
 		2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC246327EA292100DB9D1F /* chevy1.log */; };
-		2EFC246827EA30C100DB9D1F /* FrameMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246627EA30C100DB9D1F /* FrameMgr.cpp */; };
+		2EFC246827EA30C100DB9D1F /* FrameDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246627EA30C100DB9D1F /* FrameDB.cpp */; };
 		2EFC246C27EA7E6A00DB9D1F /* CanBusMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246A27EA7E6A00DB9D1F /* CanBusMgr.cpp */; };
 		2EFC247227EBCA6A00DB9D1F /* GMLAN.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */; };
 		2EFC247927EC05C700DB9D1F /* Wranger2010.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */; };
 		2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC247A27ECC67300DB9D1F /* jeep.log */; };
 		2EFC248327ECE25F00DB9D1F /* FrameDumper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */; };
+		2EFC248627EE27DF00DB9D1F /* OBD2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC248427EE27DF00DB9D1F /* OBD2.cpp */; };
+		2EFC249227EE7F2E00DB9D1F /* jeep1.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC249127EE7F1F00DB9D1F /* jeep1.log */; };
+		2EFC249427EE8EAA00DB9D1F /* t0.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC249327EE8EA300DB9D1F /* t0.log */; };
+		2EFC249627F0DF6B00DB9D1F /* vin.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC249527F0DF6100DB9D1F /* vin.log */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,6 +37,9 @@
 				2EFC246427EA2CFB00DB9D1F /* chevy.log in CopyFiles */,
 				2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */,
 				2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */,
+				2EFC249427EE8EAA00DB9D1F /* t0.log in CopyFiles */,
+				2EFC249227EE7F2E00DB9D1F /* jeep1.log in CopyFiles */,
+				2EFC249627F0DF6B00DB9D1F /* vin.log in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,8 +66,8 @@
 		2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ScreenMgr.cpp; path = src/ScreenMgr.cpp; sourceTree = "<group>"; };
 		2EFC246227EA292100DB9D1F /* chevy.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = chevy.log; sourceTree = "<group>"; };
 		2EFC246327EA292100DB9D1F /* chevy1.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = chevy1.log; sourceTree = "<group>"; };
-		2EFC246627EA30C100DB9D1F /* FrameMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FrameMgr.cpp; path = src/FrameMgr.cpp; sourceTree = "<group>"; };
-		2EFC246727EA30C100DB9D1F /* FrameMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = FrameMgr.hpp; path = src/FrameMgr.hpp; sourceTree = "<group>"; };
+		2EFC246627EA30C100DB9D1F /* FrameDB.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FrameDB.cpp; path = src/FrameDB.cpp; sourceTree = "<group>"; };
+		2EFC246727EA30C100DB9D1F /* FrameDB.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = FrameDB.hpp; path = src/FrameDB.hpp; sourceTree = "<group>"; };
 		2EFC246A27EA7E6A00DB9D1F /* CanBusMgr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CanBusMgr.cpp; path = src/CanBusMgr.cpp; sourceTree = "<group>"; };
 		2EFC246B27EA7E6A00DB9D1F /* CanBusMgr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = CanBusMgr.hpp; path = src/CanBusMgr.hpp; sourceTree = "<group>"; };
 		2EFC246E27EBC90700DB9D1F /* CanProtocol.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = CanProtocol.hpp; path = src/CanProtocol.hpp; sourceTree = "<group>"; };
@@ -71,6 +78,11 @@
 		2EFC247A27ECC67300DB9D1F /* jeep.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = jeep.log; sourceTree = "<group>"; };
 		2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FrameDumper.cpp; path = src/FrameDumper.cpp; sourceTree = "<group>"; };
 		2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = FrameDumper.hpp; path = src/FrameDumper.hpp; sourceTree = "<group>"; };
+		2EFC248427EE27DF00DB9D1F /* OBD2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = OBD2.cpp; path = src/OBD2.cpp; sourceTree = "<group>"; };
+		2EFC248527EE27DF00DB9D1F /* OBD2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = OBD2.hpp; path = src/OBD2.hpp; sourceTree = "<group>"; };
+		2EFC249127EE7F1F00DB9D1F /* jeep1.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = jeep1.log; sourceTree = "<group>"; };
+		2EFC249327EE8EA300DB9D1F /* t0.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = t0.log; sourceTree = "<group>"; };
+		2EFC249527F0DF6100DB9D1F /* vin.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = vin.log; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,18 +119,14 @@
 		2EFC242127E926CC00DB9D1F /* src */ = {
 			isa = PBXGroup;
 			children = (
+				2EFC248927EE30F900DB9D1F /* Protocols */,
 				2EFC242527E926DC00DB9D1F /* main.cpp */,
 				2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */,
 				2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */,
-				2EFC246727EA30C100DB9D1F /* FrameMgr.hpp */,
-				2EFC246627EA30C100DB9D1F /* FrameMgr.cpp */,
+				2EFC246727EA30C100DB9D1F /* FrameDB.hpp */,
+				2EFC246627EA30C100DB9D1F /* FrameDB.cpp */,
 				2EFC246B27EA7E6A00DB9D1F /* CanBusMgr.hpp */,
 				2EFC246A27EA7E6A00DB9D1F /* CanBusMgr.cpp */,
-				2EFC246E27EBC90700DB9D1F /* CanProtocol.hpp */,
-				2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */,
-				2EFC247127EBCA6A00DB9D1F /* GMLAN.hpp */,
-				2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */,
-				2EFC247827EC05C700DB9D1F /* Wranger2010.hpp */,
 				2EFC243827E928F000DB9D1F /* CommonDefs.hpp */,
 				2EFC243927E9292B00DB9D1F /* Utils.hpp */,
 			);
@@ -166,8 +174,25 @@
 				2EFC246227EA292100DB9D1F /* chevy.log */,
 				2EFC246327EA292100DB9D1F /* chevy1.log */,
 				2EFC247A27ECC67300DB9D1F /* jeep.log */,
+				2EFC249127EE7F1F00DB9D1F /* jeep1.log */,
+				2EFC249327EE8EA300DB9D1F /* t0.log */,
+				2EFC249527F0DF6100DB9D1F /* vin.log */,
 			);
 			path = CANFiles;
+			sourceTree = "<group>";
+		};
+		2EFC248927EE30F900DB9D1F /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				2EFC246E27EBC90700DB9D1F /* CanProtocol.hpp */,
+				2EFC247727EC05C700DB9D1F /* Wranger2010.cpp */,
+				2EFC247827EC05C700DB9D1F /* Wranger2010.hpp */,
+				2EFC247027EBCA6A00DB9D1F /* GMLAN.cpp */,
+				2EFC247127EBCA6A00DB9D1F /* GMLAN.hpp */,
+				2EFC248427EE27DF00DB9D1F /* OBD2.cpp */,
+				2EFC248527EE27DF00DB9D1F /* OBD2.hpp */,
+			);
+			name = Protocols;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -226,6 +251,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EFC248627EE27DF00DB9D1F /* OBD2.cpp in Sources */,
 				2EFC244B27E92B2200DB9D1F /* CmdLineRegistry.cpp in Sources */,
 				2EFC242827E926DC00DB9D1F /* main.cpp in Sources */,
 				2EFC248327ECE25F00DB9D1F /* FrameDumper.cpp in Sources */,
@@ -235,7 +261,7 @@
 				2EFC247927EC05C700DB9D1F /* Wranger2010.cpp in Sources */,
 				2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */,
 				2EFC247227EBCA6A00DB9D1F /* GMLAN.cpp in Sources */,
-				2EFC246827EA30C100DB9D1F /* FrameMgr.cpp in Sources */,
+				2EFC246827EA30C100DB9D1F /* FrameDB.cpp in Sources */,
 				2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

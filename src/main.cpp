@@ -11,9 +11,10 @@
 #include "ScreenMgr.hpp"
 
 #include "CanBusMgr.hpp"
-#include "FrameMgr.hpp"
+#include "FrameDB.hpp"
 #include "GMLAN.hpp"
 #include "Wranger2010.hpp"
+#include "OBD2.hpp"
 
 #include "FrameDumper.hpp"
 
@@ -122,11 +123,13 @@ static bool READCmdHandler( stringvector line,
 			ifName = "can0";
 		else if( fileName.find("chevy") != string::npos)
 			ifName = "can1";
-		
-		dumper.start(ifName);
+		else if( fileName.find("t0") != string::npos)
+			ifName = "can1";
+
+	//	dumper.start(ifName);
 		if( canBus->readFramesFromFile(fileName, &errnum)) {
 			
-			dumper.stop();
+//			dumper.stop();
 			
 			mgr->sendReply( "OK");
 			(cb)(true);
@@ -174,18 +177,22 @@ void registerCommandsLineFunctions() {
 int main(int argc, const char * argv[]) {
 	
 	CANBusMgr*	canBus = CANBusMgr::shared();
-	FrameMgr*	frameMgr = FrameMgr::shared();
+	FrameDB*	frameDB = FrameDB::shared();
 
 	CmdLineMgr  cmdLineMgr;
 	registerCommandsLineFunctions();
 	
 	try {
 		GMLAN gmlan;
-		Wranger2010 jeep;
+ 		Wranger2010 jeep;
+		OBD2	obdii;
+		
+		frameDB->registerProtocol("can1", &gmlan);
+		frameDB->registerProtocol("can1", &obdii);
+		
+		frameDB->registerProtocol("can0", &jeep);
+		frameDB->registerProtocol("can0", &obdii);
 
-		frameMgr->registerHandler("can1", &gmlan);
-		frameMgr->registerHandler("can0", &jeep);
-	
 		canBus->registerHandler("can0");
 		canBus->registerHandler("can1");
 		

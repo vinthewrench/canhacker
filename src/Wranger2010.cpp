@@ -6,6 +6,7 @@
 //
 
 #include "Wranger2010.hpp"
+#include "FrameDB.hpp"
 
 #include <map>
 #include <stdlib.h>
@@ -77,6 +78,85 @@ static map<uint, string> knownPid = {
 	{ 0x43E,	"heartbeat 4"},
 	{ 0x514,	""} };
 
+
+
+Wranger2010::Wranger2010(){
+	
+}
+
+void Wranger2010::registerSchema(FrameDB* db){
+	db->addSchema( _value_key_map[STEERING_ANGLE],
+					  {"Steer", "Steering Angle",	FrameDB::DEGREES});
+
+	db->addSchema( _value_key_map[MILEAGE],
+					  {"Mileage", "Vehicle Mileage",	FrameDB::KM});
+
+	db->addSchema( _value_key_map[KEY_POSITION],
+					  {"Key", "Key Position",	FrameDB::STRING});
+
+	db->addSchema( _value_key_map[FUEL_LEVEL],
+					  {"Fuel", "Fuel Level",	FrameDB::PERCENT});
+
+	db->addSchema( _value_key_map[DOORS],
+					  {"Door", "Door State",	FrameDB::BINARY});
+
+	db->addSchema( _value_key_map[CLOCK],
+					  {"Clock", "Clock",	FrameDB::STRING});
+
+}
+
+void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	switch(frame.can_id) {
+			
+		case 0x1E1:
+		{
+			uint16_t xx = (frame.data[2] <<8 | frame.data[3]);
+			if (xx != 0xFFFF){
+				float angle = xx - 4096. ;
+				xx = angle * 0.4;
+				db->updateValue(_value_key_map[STEERING_ANGLE], to_string(xx), when, eTag);
+			};
+			
+ 	 		}
+			break;
+
+		case 0x214:
+		{
+			int dist = 	(frame.data[0] << 12  | frame.data[1] <<8  | frame.data[2] );
+			db->updateValue(_value_key_map[MILEAGE], to_string(dist), when, eTag);
+		}
+			break;
+
+		case 0x21B:
+		{
+			float level = 	( frame.data[5] / 160.0 );
+			db->updateValue(_value_key_map[FUEL_LEVEL], to_string(level), when, eTag);
+		}
+			break;
+
+		case 0x244:
+		{
+			int doors = 	 frame.data[0] ;
+			db->updateValue(_value_key_map[DOORS], to_string(doors), when, eTag);
+		}
+			break;
+
+		case 0x3E6:
+		{
+			char str[10];
+			sprintf (str, "%d:%02d:%02d", frame.data[0], frame.data[1],frame.data[2]);\
+			db->updateValue(_value_key_map[CLOCK], string(str), when, eTag);
+		}
+			break;
+
+			
+		default:
+		  break;
+	};
+	
+}
+
+
 string Wranger2010::nameForFrame(can_frame_t frame){
 	
 	return "";
@@ -90,3 +170,4 @@ string Wranger2010::descriptionForFrame(can_frame_t frame){
 
 	return name;
 }
+ 

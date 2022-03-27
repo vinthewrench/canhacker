@@ -80,13 +80,17 @@ void FrameDumper::start(string ifName){
 void FrameDumper::stop(){
 	_ifName = "";
 	printf("\x1b[70;0H\x1b[?25h");
+	
+	FrameDB::shared()->dumpValues();
+	fflush(stdout);
+	
 }
 
 
 
 void FrameDumper::run() {
 	
-	FrameMgr* frameMgr = FrameMgr::shared();
+	FrameDB* frameDB = FrameDB::shared();
 	
 	while(_running){
 
@@ -95,23 +99,25 @@ void FrameDumper::run() {
 
 		if(!ifName.empty()){
 			time_t now = time(NULL);
-			
-			CanProtocol* proto = frameMgr->protocolForHandler(ifName);
 	 
-			auto  can_ids = frameMgr->framesUpdateSinceEtag(ifName, _lastEtag, &_lastEtag);
-			auto old_ids = frameMgr->framesOlderthan(ifName, now - 5);
+			auto  can_ids = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &_lastEtag);
+			auto old_ids = frameDB->framesOlderthan(ifName, now - 5);
 	 
 			for(auto can_id : can_ids){
 				frame_entry frame;
 				bool isOldFrame = find(old_ids.begin(), old_ids.end(), can_id) != old_ids.end();
-				if( frameMgr->frameWithCanID(ifName, can_id, &frame)){
-				
-					printf("\x1b[%d;0H%6ld %s",
+				if( frameDB->frameWithCanID(ifName, can_id, &frame)){
+						printf("\x1b[%d;0H%6ld %s",
 							 frame.line +4,
 							 frame.avgTime,
 							 hexDumpFrame(frame.frame, isOldFrame, frame.lastChange).c_str());
-					if(proto)
-						printf("   %s", proto->descriptionForFrame(frame.frame).c_str());
+					
+					auto protos = frameDB->protocolsForInterface(ifName);
+					for( auto proto : protos){
+						auto str = proto->descriptionForFrame(frame.frame);
+						if(!str.empty())
+							printf("   %s", str.c_str());
+					}
 				}
 			}
 		}

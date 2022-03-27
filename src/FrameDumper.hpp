@@ -7,8 +7,7 @@
 #pragma once
 
 #include "CommonDefs.hpp"
-
-#include "FrameMgr.hpp"
+#include "FrameDB.hpp"
 
 #include <string>
 

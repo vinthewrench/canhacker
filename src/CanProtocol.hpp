@@ -9,17 +9,30 @@
 
 #include "CommonDefs.hpp"
 #include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <mutex>
+#include <bitset>
+#include <cstdint>
+
 typedef struct can_frame can_frame_t;
 
 using namespace std;
 
+class FrameDB;
+
 class CanProtocol {
-	
+
 public:
  
-	virtual string nameForFrame(can_frame_t frame) = 0;
-	virtual string descriptionForFrame(can_frame_t frame) = 0;
-  
-private:
+	virtual void registerSchema(FrameDB*) {};
+	
+	virtual void reset()  {};
+	virtual void processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){};
+	virtual string nameForFrame(can_frame_t frame)  {return "";};
+	virtual string descriptionForFrame(can_frame_t frame)  {return "";};
+ 
+ 
 };
 

@@ -141,9 +141,9 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
 	struct timeval start_tv = {0,0};
 	
-	FrameMgr* frameMgr = FrameMgr::shared();
+	FrameDB* frameDB = FrameDB::shared();
  
-	frameMgr->clearFrames("");
+	frameDB->clearFrames("");
 	if(filePath.empty())
 			return false;
  
@@ -215,7 +215,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 				}
 			}
 			if(!failed){
-				frameMgr->saveFrame(string(canport), frame, timestamp);
+				frameDB->saveFrame(string(canport), frame, timestamp);
 				usleep(500);
 			}
 		}
@@ -223,7 +223,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 		statusOk = true;
 		ifs.close();
 		
-	//	frameMgr->dumpFrames();
+	//	frameDB->dumpFrames();
 	}
 	catch(std::ifstream::failure &err) {
 		
@@ -239,7 +239,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 
 void CANBusMgr::run() {
 	
-	FrameMgr* frameMgr = FrameMgr::shared();
+	FrameDB* frameDB = FrameDB::shared();
 	
 	while(_running){
 
