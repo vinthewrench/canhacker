@@ -25,6 +25,7 @@ public:
 	void start(string ifName);
 	void stop();
 
+ 
 private:
 	void run();
 
@@ -32,6 +33,14 @@ private:
 	bool 				_running;	 //Flag for starting and terminating the main loop
 	string 			_ifName;
 	
+	bool 				_idle;
+	
+	bool				_showFrames;
+	bool 				_showValues;
+	
 	eTag_t 			_lastEtag;
 
+	map<canid_t, int> _lineMap;
+	int _lastLine;
+	
 };

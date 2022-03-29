@@ -21,7 +21,7 @@ using namespace std;
 
 struct  frame_entry{
 	can_frame_t 	frame;
-	uint				line;			// line number for this frame
+//	uint				line;			// line number for this frame
 	long				timeStamp;	// from canbus (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
 	long				avgTime;		 // how often do we see these  ((now - lastTime) + avgTime) / 2
 	eTag_t 			eTag;
@@ -75,6 +75,7 @@ class FrameDB {
 		MINUTES,			// mins
 		DEGREES_C,		// degC
 		KPA,				// kilopascal
+		PA,				// pascal
 
 		DEGREES,			// Degrees (heading)
 
@@ -86,17 +87,20 @@ class FrameDB {
 		LPH,				// Liters / Hour
 		GPS,				// grams per second
 		KM,				// Kilometers
-
+		RATIO,			//
+		
+		SPECIAL,
 		IGNORE,
 		UNKNOWN,
 	}valueSchemaUnits_t;
 
 	typedef struct {
-		string  					title;
-		 string  				description;
+		string_view  		title;
+		string_view  		description;
 		valueSchemaUnits_t  	units;
-  } valueSchema_t;
-	
+	} valueSchema_t;
+
+
 	void addSchema(string_view key,  valueSchema_t schema);
 	valueSchema_t schemaForKey(string_view key);
 

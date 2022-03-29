@@ -151,7 +151,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		// create new frame entry
 		frame_entry entry;
 		entry.frame = frame;
-		entry.line = (uint) theFrames->size();
+//		entry.line = (uint) theFrames->size();
 		entry.timeStamp = timeStamp;
 		entry.avgTime = 0;
 		entry.eTag = ++_lastEtag;
@@ -159,14 +159,14 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		entry.lastChange.reset();
 		theFrames->insert( std::pair<canid_t,frame_entry>(can_id,entry));
 		isNew = true;
-		line = entry.line;
+//		line = entry.line;
 	}
 	else {
 		// can ID is already there
 		auto e = theFrames->find(can_id);
 		auto oldFrame = &e->second.frame;
 		
-		line = e->second.line;
+//		line = e->second.line;
 		
 		if(frame.can_dlc == oldFrame->can_dlc
 			&& memcmp(frame.data, oldFrame->data, frame.can_dlc ) == 0){
@@ -322,8 +322,8 @@ void  FrameDB::clearValues(){
 }
 
 void FrameDB::addSchema(string_view key,  valueSchema_t schema){
-	_schema[key] = schema;
-	 
+	if( _schema.find(key) == _schema.end())
+		_schema[key] = schema;
 }
  
 
@@ -356,14 +356,16 @@ vector<string>  	FrameDB::valuesOlderthan(time_t time){
 };
 
 bool FrameDB::valueWithKey(string key, string &value){
-	
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	return false;
 };
 
 void FrameDB::dumpValues(){
+	printf("\r\n------\r\n");
 	for( auto &[key,value] : _values){
 		auto schema = schemaForKey(key);
-		printf("%10s: %s \r\n", schema.title.c_str(), value.value.c_str());
+		printf("%30s: %s \r\n", string(schema.title).c_str(), value.value.c_str());
 		
 	}
 	

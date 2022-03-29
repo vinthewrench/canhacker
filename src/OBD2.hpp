@@ -21,7 +21,6 @@ public:
 	virtual void reset();
 	virtual void processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);
 
-	virtual string nameForFrame(can_frame_t frame);
 	virtual string descriptionForFrame(can_frame_t frame);
   
 private:
@@ -31,9 +30,6 @@ private:
 									uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data);
 			 
 	typedef struct {
-		
-//		canid_t 		can_id;
-		
 		uint8_t			mode;
 		uint8_t			pid;
 		uint8_t			rollingcnt; 	// next expected cnt

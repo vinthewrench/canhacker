@@ -26,6 +26,8 @@
 #define FUEL_SYSTEM_2  0x1EF
 #define VEHICLE_SPEED_DIST 0x3E9
  
+
+
  // derived from GMW8762
 static map<uint, string> knownPid = {
 { 0x0C1, "Driven Wheel Rotational Status"},
@@ -91,70 +93,65 @@ static map<uint, string> knownPid = {
 { 0x1DE, "Hybrid Battery General Status"}
 };
 
+typedef  enum  {
+		ENGINE_RPM,
+		ENGINE_RUNNING,
+		FUEL_CONSUMPTION,
+		THROTTLE_POS,
+		FAN_SPEED,
+		TEMP_COOLANT,
+		TEMP_TRANSMISSION,
+		PRESSURE_OIL,
+		VEHICLE_SPEED,
+		MASS_AIR_FLOW,
+		BAROMETRIC_PRESSURE,
+		TEMP_AIR_INTAKE,
+		TEMP_AIR_AMBIENT,
+		TRANS_GEAR,
+		} value_keys_t;
+
+
+typedef FrameDB::valueSchema_t valueSchema_t;
+
+static map<value_keys_t,  valueSchema_t> _schemaMap = {
+	{ENGINE_RPM,			{"GM_ENGINE_RPM",			"Engine RPM",							FrameDB::RPM}},
+	{ENGINE_RUNNING,		{"GM_ENGINE_RUNNING",	"Engine Run Active",					FrameDB::BOOL}},
+	{FUEL_CONSUMPTION,	{"GM_FUEL_CONSUMPTION",	"Instantaneous Fuel Consumption Rate", 	FrameDB::LPH}},
+	{THROTTLE_POS,			{"GM_THROTTLE_POS",		"Throttle Pedal Position",				FrameDB::PERCENT}},
+	{FAN_SPEED,				{"GM_FAN_SPEED",			"Fan Speed", 								FrameDB::PERCENT}},
+	{TEMP_COOLANT,			{"GM_COOLANT_TEMP",		"Engine Coolant Temperature", 		FrameDB::DEGREES_C}},
+	{TEMP_TRANSMISSION,	{"GM_TRANS_TEMP",			"Transmission Temperature",			FrameDB::DEGREES_C}},
+	{PRESSURE_OIL,			{"GM_OIL_PRESSURE",		"Oil Pressure",							FrameDB::KPA}},
+	{VEHICLE_SPEED,		{"GM_VEHICLE_SPEED",		"Vehicle Speed",							FrameDB::KPH}},
+	{MASS_AIR_FLOW,		{"GM_MAF",					"Air Flow Rate (MAF)",					FrameDB::GPS}},
+	{BAROMETRIC_PRESSURE,{"GM_BAROMETRIC_PRESSURE",	"Barometric Pressure",				FrameDB::KPA}},
+	{TEMP_AIR_INTAKE,		{"GM_INTAKE_TEMP",		"Intake Air Temp",						FrameDB::DEGREES_C}},
+	{TEMP_AIR_AMBIENT,	{"GM_AMBIANT_AIR_TEMP",	"Ambient air temperature",				FrameDB::DEGREES_C}},
+	{TRANS_GEAR,			{"GM_TRANS_GEAR",			"Current Gear",							FrameDB::STRING}}
+	};
 
 
 GMLAN::GMLAN(){
 }
+
  
 
 void GMLAN::registerSchema(FrameDB* db){
 	
-	db->addSchema( _value_key_map[ENGINE_RPM],
-					  {"RPM", "Engine RPM",	FrameDB::RPM});
-	
-	db->addSchema( _value_key_map[ENGINE_RUNNING],
-					  {"Running", "Engine Run Active",	FrameDB::BOOL});
-	
-	db->addSchema( _value_key_map[FUEL_CONSUPTION],
-					  {"Consume", "Instantaneous Fuel Consumption Rate", FrameDB::LPH});
+	for (auto it = _schemaMap.begin(); it != _schemaMap.end(); it++){
+		valueSchema_t*  schema = &it->second;
+		db->addSchema(schema->title,  {schema->title, schema->description, schema->units});
+	}
 
-	db->addSchema( _value_key_map[THROTTLE_POS],
-					  {"Pedal", "Throttle Pedal Position",FrameDB::PERCENT});
-	
-	db->addSchema( _value_key_map[FAN_SPEED],
-					  {"Fan", "Fan Speed Percent", FrameDB::PERCENT});
-	
-	db->addSchema( _value_key_map[TEMP_COOLANT],
-					  {"Temp", "Coolant Temperature", FrameDB::DEGREES_C});
-	
-	db->addSchema( _value_key_map[TEMP_TRANSMISSION],
-					  {"Trans Temp", "Transmission Temperature", FrameDB::DEGREES_C});
-	
-	db->addSchema( _value_key_map[PRESSURE_OIL],
-					  {"Oil", "Engine Oil Pressure", FrameDB::KPA});
-	
-	db->addSchema( _value_key_map[VEHICLE_SPEED],
-					  {"Speed", "Vehicle Speed", FrameDB::KPH});
-	
-	db->addSchema( _value_key_map[MASS_AIR_FLOW],
-					  {"MAF", "Mass Air Flow", FrameDB::GPS});
- 
-	db->addSchema( _value_key_map[BAROMETRIC_PRESSURE],
-					  {"Baro", "Barometric Pressure Absolute", FrameDB::KPA});
-	
-	db->addSchema( _value_key_map[TEMP_AIR_INTAKE],
-					  {"Air In", "Engine Intake Air Temperature", FrameDB::DEGREES_C});
-	
-	db->addSchema( _value_key_map[TEMP_AIR_AMBIENT],
-					  {"Air Amb", "Outside Air Temperature", FrameDB::DEGREES_C});
-	
-	db->addSchema( _value_key_map[TRANS_GEAR],
-					  {"Gear", "Transmission Estimated Gear", FrameDB::STRING});
-	
  }
 
-string_view GMLAN::keyForValueKey(int valueKey) {
-	
-	if(valueKey >= value_keys_t::begin && valueKey <= value_keys_t::end)
-		return _value_key_map[ static_cast<value_keys_t>( valueKey)];
-	
-  return "";}
+string_view GMLAN::schemaKeyForValueKey(int valueKey) {
+	 
+	auto key = static_cast<value_keys_t>( valueKey);
+	valueSchema_t*  schema = &_schemaMap[key];
+	return schema->title;
+  }
  
-
-string GMLAN::nameForFrame(can_frame_t frame){
-	
-	return "";
-}
 
 string GMLAN::descriptionForFrame(can_frame_t frame){
 	string name = "";
@@ -168,8 +165,7 @@ string GMLAN::descriptionForFrame(can_frame_t frame){
 
 
 void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	
-	
+ 
 	switch(frame.can_id) {
 
 		case PLAT_GEN_STAT:
@@ -243,41 +239,42 @@ void GMLAN::processEngineGenStatus(FrameDB* db, can_frame_t frame, time_t when, 
 
 void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 
+	
 	bool running =  frame.data[0] & 0x80;
-	db->updateValue(_value_key_map[ENGINE_RUNNING], to_string(running), when, eTag);
+	db->updateValue(schemaKeyForValueKey(ENGINE_RUNNING), to_string(running), when, eTag);
 
 	int rpm = 	frame.data[1] <<8 | frame.data[2];
 	rpm = rpm / 4;
-	db->updateValue(_value_key_map[ENGINE_RPM], to_string(rpm), when, eTag);
+	db->updateValue(schemaKeyForValueKey(ENGINE_RPM), to_string(rpm), when, eTag);
  
  };
 
 void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	float tPos = ((frame.data[1])* 100)/255;
-	db->updateValue(_value_key_map[THROTTLE_POS], to_string((int)tPos),when, eTag);
+	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string((int)tPos),when, eTag);
 
 	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
-	db->updateValue(_value_key_map[FUEL_CONSUPTION], to_string(ifc),when, eTag);
+	db->updateValue(schemaKeyForValueKey(FUEL_CONSUMPTION), to_string(ifc),when, eTag);
 	
 };
 
 void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 
 	float fan = ((frame.data[1])* 100)/255;
-	db->updateValue(_value_key_map[FAN_SPEED], to_string((int)fan),when, eTag);
+	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string((int)fan),when, eTag);
 
 };
 
 void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	float oilpress =  (frame.data[2] * 4)  * 0.145038;
-	db->updateValue(_value_key_map[PRESSURE_OIL], to_string(oilpress),when, eTag);
+	db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when, eTag);
 };
 
 
 
 void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	float maf =  ((frame.data[2])  <<8 | frame.data[3]) * 0.01;
-	db->updateValue(_value_key_map[MASS_AIR_FLOW], to_string(maf),when, eTag);
+	db->updateValue(schemaKeyForValueKey(MASS_AIR_FLOW), to_string(maf),when, eTag);
 
 
 };
@@ -285,16 +282,16 @@ void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t whe
 void GMLAN::processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 
 	float baro		= 	(frame.data[1]  / 2.0);
-	db->updateValue(_value_key_map[BAROMETRIC_PRESSURE], to_string(baro),when, eTag);
+	db->updateValue(schemaKeyForValueKey(BAROMETRIC_PRESSURE), to_string(baro),when, eTag);
  
 	float coolTemp = 	frame.data[2]  - 40;
-	db->updateValue(_value_key_map[TEMP_COOLANT], to_string(coolTemp),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_COOLANT), to_string(coolTemp),when, eTag);
 
 	float airIn 	=	frame.data[3]  - 40;
-	db->updateValue(_value_key_map[TEMP_AIR_INTAKE], to_string(airIn),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_AIR_INTAKE), to_string(airIn),when, eTag);
 
 	float airAmb =  	(frame.data[4] *.5) - 40;
-	db->updateValue(_value_key_map[TEMP_AIR_AMBIENT], to_string(airAmb),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_AIR_AMBIENT), to_string(airAmb),when, eTag);
 
 };
 
@@ -324,14 +321,14 @@ void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t wh
 			"P"
 		};
 		
-		db->updateValue(_value_key_map[TRANS_GEAR], gearCode[gear] ,when, eTag);
+		db->updateValue(schemaKeyForValueKey(TRANS_GEAR), gearCode[gear] ,when, eTag);
 
 	}
 };
 
 void GMLAN::processTransmissionStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	float transTemp =  frame.data[1]  - 40  ;
-	db->updateValue(_value_key_map[TEMP_TRANSMISSION], to_string(transTemp),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_TRANSMISSION), to_string(transTemp),when, eTag);
 
 };
 
@@ -348,11 +345,11 @@ void GMLAN::processTransOutRotation(FrameDB* db, can_frame_t frame, time_t when,
 void GMLAN::processVehicleSpeed(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	
 	bool speedValid = (frame.data[0] & 0x80) == 0x00;
-	bool distValid = (frame.data[2] & 0x40) == 0x00;
+//	bool distValid = (frame.data[2] & 0x40) == 0x00;
 
 	if(speedValid) {
 		float speed	= (((frame.data[0] & 0x7F) <<8)  | frame.data[1]) * 0.015625;
-		db->updateValue(_value_key_map[VEHICLE_SPEED], to_string(speed),when, eTag);
+		db->updateValue(schemaKeyForValueKey(VEHICLE_SPEED), to_string(speed),when, eTag);
 	}
 	
 //	if(distValid) {

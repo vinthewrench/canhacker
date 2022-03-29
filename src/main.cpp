@@ -125,15 +125,23 @@ static bool READCmdHandler( stringvector line,
 			ifName = "can1";
 		else if( fileName.find("t0") != string::npos)
 			ifName = "can1";
+		else if( fileName.find("vin") != string::npos)
+			ifName = "can1";
 
-	//	dumper.start(ifName);
+		FrameDB::shared()->clearFrames(ifName);
+		FrameDB::shared()->clearValues();
+	
+		
+	 	dumper.start(ifName);
 		if( canBus->readFramesFromFile(fileName, &errnum)) {
 			
-//			dumper.stop();
-			
+ 			dumper.stop();
 			mgr->sendReply( "OK");
 			(cb)(true);
 			
+	//		FrameDB::shared()->dumpValues();
+			fflush(stdout);
+
 			return true;
 		}
 		else {

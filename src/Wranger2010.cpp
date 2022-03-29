@@ -80,30 +80,45 @@ static map<uint, string> knownPid = {
 
 
 
+typedef  enum  {
+		STEERING_ANGLE,
+		VEHICLE_DISTANCE,
+		KEY_POSITION,
+		FUEL_LEVEL,
+		DOORS,
+		CLOCK,
+} value_keys_t;
+
+typedef FrameDB::valueSchema_t valueSchema_t;
+
+static map<value_keys_t,  valueSchema_t> _schemaMap = {
+	{STEERING_ANGLE,		{"JK_STEERING_ANGLE",			"Steering Angle",							FrameDB::DEGREES}},
+	{VEHICLE_DISTANCE,	{"JK_VEHICLE_DISTANCE",			"Vehicle Distance Driven",				FrameDB::KM}},
+	{KEY_POSITION,			{"JK_KEY_POSITION",				"Key Position",							FrameDB::STRING}},
+	{FUEL_LEVEL,			{"JK_FUEL_LEVEL",					"Fuel Level",								FrameDB::PERCENT}},
+	{DOORS,					{"JK_DOORS",						"Door State",								FrameDB::BINARY}},
+	{CLOCK,					{"JK_CLOCK",						"Clock Time",								FrameDB::STRING}},
+	};
+
+
 Wranger2010::Wranger2010(){
 	
 }
 
 void Wranger2010::registerSchema(FrameDB* db){
-	db->addSchema( _value_key_map[STEERING_ANGLE],
-					  {"Steer", "Steering Angle",	FrameDB::DEGREES});
-
-	db->addSchema( _value_key_map[MILEAGE],
-					  {"Mileage", "Vehicle Mileage",	FrameDB::KM});
-
-	db->addSchema( _value_key_map[KEY_POSITION],
-					  {"Key", "Key Position",	FrameDB::STRING});
-
-	db->addSchema( _value_key_map[FUEL_LEVEL],
-					  {"Fuel", "Fuel Level",	FrameDB::PERCENT});
-
-	db->addSchema( _value_key_map[DOORS],
-					  {"Door", "Door State",	FrameDB::BINARY});
-
-	db->addSchema( _value_key_map[CLOCK],
-					  {"Clock", "Clock",	FrameDB::STRING});
-
+	
+	for (auto it = _schemaMap.begin(); it != _schemaMap.end(); it++){
+		valueSchema_t*  schema = &it->second;
+		db->addSchema(schema->title,  {schema->title, schema->description, schema->units});
+	}
 }
+
+string_view Wranger2010::schemaKeyForValueKey(int valueKey) {
+	 
+	auto key = static_cast<value_keys_t>( valueKey);
+	valueSchema_t*  schema = &_schemaMap[key];
+	return schema->title;
+  }
 
 void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	switch(frame.can_id) {
@@ -114,7 +129,7 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 			if (xx != 0xFFFF){
 				float angle = xx - 4096. ;
 				xx = angle * 0.4;
-				db->updateValue(_value_key_map[STEERING_ANGLE], to_string(xx), when, eTag);
+				db->updateValue(schemaKeyForValueKey(STEERING_ANGLE), to_string(xx), when, eTag);
 			};
 			
  	 		}
@@ -123,21 +138,21 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		case 0x214:
 		{
 			int dist = 	(frame.data[0] << 12  | frame.data[1] <<8  | frame.data[2] );
-			db->updateValue(_value_key_map[MILEAGE], to_string(dist), when, eTag);
+			db->updateValue(schemaKeyForValueKey(VEHICLE_DISTANCE), to_string(dist), when, eTag);
 		}
 			break;
 
 		case 0x21B:
 		{
 			float level = 	( frame.data[5] / 160.0 );
-			db->updateValue(_value_key_map[FUEL_LEVEL], to_string(level), when, eTag);
+			db->updateValue(schemaKeyForValueKey(FUEL_LEVEL), to_string(level), when, eTag);
 		}
 			break;
 
 		case 0x244:
 		{
 			int doors = 	 frame.data[0] ;
-			db->updateValue(_value_key_map[DOORS], to_string(doors), when, eTag);
+			db->updateValue(schemaKeyForValueKey(DOORS), to_string(doors), when, eTag);
 		}
 			break;
 
@@ -145,7 +160,7 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		{
 			char str[10];
 			sprintf (str, "%d:%02d:%02d", frame.data[0], frame.data[1],frame.data[2]);\
-			db->updateValue(_value_key_map[CLOCK], string(str), when, eTag);
+			db->updateValue(schemaKeyForValueKey(CLOCK), string(str), when, eTag);
 		}
 			break;
 
@@ -156,11 +171,6 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 	
 }
 
-
-string Wranger2010::nameForFrame(can_frame_t frame){
-	
-	return "";
-}
 
 string Wranger2010::descriptionForFrame(can_frame_t frame){
 	string name = "";
