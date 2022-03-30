@@ -28,8 +28,8 @@
 #include <stdexcept>
 
 #include <execinfo.h>
+#include <cassert>
 
-#include <execinfo.h>
 using namespace std;
 
 void
