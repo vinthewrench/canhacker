@@ -12,7 +12,6 @@
 		2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */; };
 		2EFC244B27E92B2200DB9D1F /* CmdLineRegistry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244427E92B2200DB9D1F /* CmdLineRegistry.cpp */; };
 		2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244727E92B2200DB9D1F /* CmdLineHelp.cpp */; };
-		2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */; };
 		2EFC246427EA2CFB00DB9D1F /* chevy.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC246227EA292100DB9D1F /* chevy.log */; };
 		2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2EFC246327EA292100DB9D1F /* chevy1.log */; };
 		2EFC246827EA30C100DB9D1F /* FrameDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC246627EA30C100DB9D1F /* FrameDB.cpp */; };
@@ -63,8 +62,6 @@
 		2EFC244627E92B2200DB9D1F /* CmdLineMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CmdLineMgr.hpp; path = src/CmdLineMgr.hpp; sourceTree = "<group>"; };
 		2EFC244727E92B2200DB9D1F /* CmdLineHelp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CmdLineHelp.cpp; path = src/CmdLineHelp.cpp; sourceTree = "<group>"; };
 		2EFC244827E92B2200DB9D1F /* CmdLineHelp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CmdLineHelp.hpp; path = src/CmdLineHelp.hpp; sourceTree = "<group>"; };
-		2EFC245927E95D0000DB9D1F /* ScreenMgr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ScreenMgr.hpp; path = src/ScreenMgr.hpp; sourceTree = "<group>"; };
-		2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ScreenMgr.cpp; path = src/ScreenMgr.cpp; sourceTree = "<group>"; };
 		2EFC246227EA292100DB9D1F /* chevy.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = chevy.log; sourceTree = "<group>"; };
 		2EFC246327EA292100DB9D1F /* chevy1.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = chevy1.log; sourceTree = "<group>"; };
 		2EFC246627EA30C100DB9D1F /* FrameDB.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FrameDB.cpp; path = src/FrameDB.cpp; sourceTree = "<group>"; };
@@ -172,8 +169,6 @@
 				2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */,
 				2EFC244427E92B2200DB9D1F /* CmdLineRegistry.cpp */,
 				2EFC244527E92B2200DB9D1F /* CmdLineRegistry.hpp */,
-				2EFC245A27E95D0000DB9D1F /* ScreenMgr.cpp */,
-				2EFC245927E95D0000DB9D1F /* ScreenMgr.hpp */,
 			);
 			name = "Cmdline Stuff";
 			sourceTree = "<group>";
@@ -266,7 +261,6 @@
 				2EFC242827E926DC00DB9D1F /* main.cpp in Sources */,
 				2EFC248327ECE25F00DB9D1F /* FrameDumper.cpp in Sources */,
 				2EFC244927E92B2200DB9D1F /* CmdLineBuffer.cpp in Sources */,
-				2EFC245B27E95D0000DB9D1F /* ScreenMgr.cpp in Sources */,
 				2EFC246C27EA7E6A00DB9D1F /* CanBusMgr.cpp in Sources */,
 				2EFC247927EC05C700DB9D1F /* Wranger2010.cpp in Sources */,
 				2EFC244C27E92B2200DB9D1F /* CmdLineHelp.cpp in Sources */,

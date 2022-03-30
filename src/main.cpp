@@ -8,8 +8,6 @@
  
 #include "CmdLineMgr.hpp"
 #include "CmdLineRegistry.hpp"
-#include "ScreenMgr.hpp"
-
 #include "CanBusMgr.hpp"
 #include "FrameDB.hpp"
 #include "GMLAN.hpp"
@@ -50,10 +48,7 @@ handler()
 }
 
 
-
-//GMLAN	gmlan;
   
-ScreenMgr screen;
 FrameDumper dumper;
 
 static bool STOPCmdHandler( stringvector line,
@@ -193,7 +188,7 @@ void registerCommandsLineFunctions() {
 	cmlR->registerCommand("clear", [=] (stringvector line,
 													 CmdLineMgr* mgr,
 													 boolCallback_t cb ){
-		screen.clearScreen();
+		printf("\x1b[0;0H\x1b[2J");
 		(cb) (true);
 		return false;
 	});

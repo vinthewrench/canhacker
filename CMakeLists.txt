@@ -8,16 +8,17 @@ project(canhacker)
 
 set(SOURCES
 	src/main.cpp
-	src/CANFrame.cpp
-	src/CANbus.cpp
+	src/CanBusMgr.cpp
 	src/CmdLineBuffer.cpp
 	src/CmdLineHelp.cpp
 	src/CmdLineMgr.cpp
 	src/CmdLineRegistry.cpp
+	src/FrameDB.cpp
+	src/FrameDumper.cpp
 	src/GMLAN.cpp
-	src/ScreenMgr.cpp
-
-)
+	src/OBD2.cpp
+	src/Wranger2010.cpp
+	)
 
 add_executable(canhacker ${SOURCES})
 
