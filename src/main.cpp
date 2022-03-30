@@ -65,6 +65,8 @@ static bool STOPCmdHandler( stringvector line,
 
 	CANBusMgr*	canBus = CANBusMgr::shared();
 	
+	dumper.stop();
+
 	if(canBus->stop(portStr.c_str(),  &errnum)){
 		mgr->sendReply( "OK");
 		(cb)(true);
@@ -99,8 +101,11 @@ static bool SNIFFCmdHandler( stringvector line,
 	else {
 		
 		CANBusMgr*	canBus = CANBusMgr::shared();
-		
+	
+	
 		if(canBus->start(portStr.c_str(),  &errnum)){
+			dumper.start(portStr);
+
 			mgr->sendReply( "OK");
 			(cb)(true);
 

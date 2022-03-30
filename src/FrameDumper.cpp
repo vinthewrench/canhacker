@@ -284,8 +284,8 @@ void FrameDumper::printChangedFrames(string ifName){
 	auto allKeys = frameDB->allValueKeys();
 
 	printf("\x1b[%d;0H\x1b[2K", 0);
-	printf("\x1b[2K can-ids:%d  values:%lu",
-			 _lastFrameLine,allKeys.size() );
+	printf("\x1b[2K can-ids:%d  values:%d",
+			 _lastFrameLine, (int) allKeys.size() );
  
 	bool addedLines = false;
  
