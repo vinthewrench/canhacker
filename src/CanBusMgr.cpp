@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cassert>
 
 #include "GMLAN.hpp"
 #include  "Wranger2010.hpp"
@@ -217,7 +218,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 
 			p = p+n;
 			
-			frame.len = 0;
+			frame.can_dlc = 0;
 			while(*p) {
 				uint8_t b1;
 		
@@ -226,9 +227,9 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 					break;
 				}
 				
-				frame.data[frame.len++] = b1;
+				frame.data[frame.can_dlc++] = b1;
 				p+=2;
-				if(frame.len > CAN_MAX_DLEN) {
+				if(frame.can_dlc > CAN_MAX_DLEN) {
 					failed = true;
 					break;
 				}
