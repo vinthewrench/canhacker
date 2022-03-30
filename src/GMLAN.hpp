@@ -45,6 +45,8 @@ private:
 
 	void processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);
 
+	void processEngineTorqueStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);
+	
 	void processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);
 
 	void processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);

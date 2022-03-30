@@ -182,7 +182,14 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 				p += sprintf(p, "%0.1f mi",  dist);
 			}
 				break;
-				
+	
+			case	FrameDB::KPH:
+			{
+				double dist =   stof(value) * 0.621371;
+				p += sprintf(p, "%0.1f mi/hr",  dist);
+			}
+				break;
+
 			case	FrameDB::BINARY:
 			{
 				

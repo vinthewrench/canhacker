@@ -88,7 +88,8 @@ class FrameDB {
 		GPS,				// grams per second
 		KM,				// Kilometers
 		RATIO,			//
-		FUEL_TRIM,		// 
+		FUEL_TRIM,		//
+		NM,				// Newton Meters
 		SPECIAL,
 		IGNORE,
 		UNKNOWN,

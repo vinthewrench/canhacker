@@ -56,14 +56,11 @@ private:
 	bool 				_running;	 //Flag for starting and terminating the main loop
 
 	int openSocket(string ifName, int *error = NULL);
- 
-	typedef struct {
-		int 				fd;
-		string			ifName;
-	} interfaceInfo_t;
 
-	map<string, interfaceInfo_t> _interfaces;
-
+	map<string, int> _interfaces;
+	fd_set	 _master_fds;		//Socket descriptor set that holds the sockets that are ready for read
+	int		_max_fds;
+	
 	static CANBusMgr *sharedInstance;
 };
 

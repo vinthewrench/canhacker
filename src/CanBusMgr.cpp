@@ -13,11 +13,35 @@
 #include "GMLAN.hpp"
 #include  "Wranger2010.hpp"
 
+/* add a fd to fd_set, and update max_fd */
+static int safe_fd_set(int fd, fd_set* fds, int* max_fd) {
+	 assert(max_fd != NULL);
+
+	 FD_SET(fd, fds);
+	 if (fd > *max_fd) {
+		  *max_fd = fd;
+	 }
+	 return 0;
+}
+
+/* clear fd from fds, update max fd if needed */
+static int safe_fd_clr(int fd, fd_set* fds, int* max_fd) {
+	 assert(max_fd != NULL);
+
+	 FD_CLR(fd, fds);
+	 if (fd == *max_fd) {
+		  (*max_fd)--;
+	 }
+	 return 0;
+}
+
 CANBusMgr *CANBusMgr::sharedInstance = NULL;
 
 CANBusMgr::CANBusMgr(){
 	_interfaces.clear();
 	_running = true;
+	FD_ZERO(&_master_fds);
+	_max_fds = 0;
 	
 	_thread = std::thread(&CANBusMgr::run, this);
 
@@ -26,6 +50,9 @@ CANBusMgr::CANBusMgr(){
 CANBusMgr::~CANBusMgr(){
 	
 	stop("");
+	
+	FD_ZERO(&_master_fds);
+	_max_fds = 0;
 	
 	_running = false;
 	 
@@ -40,11 +67,7 @@ bool CANBusMgr::registerHandler(string ifName) {
  	if(_interfaces.count(ifName))
 		return false;
 	
-	interfaceInfo_t ifInfo;
-	ifInfo.fd = -1;
-	ifInfo.ifName = ifName;
- 
-	_interfaces[ifName] = ifInfo;
+	 	_interfaces[ifName] = -1;
 	
 	return true;
 }
@@ -61,12 +84,13 @@ void CANBusMgr::unRegisterHandler(string ifName){
 
 bool CANBusMgr::start(string ifName,int *errorOut){
 	
-	for (auto& [key, entry]  : _interfaces){
+	for (auto& [key, fd]  : _interfaces){
 		if (strcasecmp(key.c_str(), ifName.c_str()) == 0){
-			if(entry.fd == -1){
+ 			if(fd == -1){
 				// open connection here
-				entry.fd = openSocket(ifName, errorOut);
- 				return entry.fd == -1?false:true;
+				fd = openSocket(ifName, errorOut);
+				_interfaces[ifName] = fd;
+ 				return fd == -1?false:true;
 			}
 		}
 	}
@@ -102,7 +126,10 @@ int CANBusMgr::openSocket(string ifname, int *errorOut){
 		if(errorOut) *errorOut = errno;
 		return -1;
 	}
- 
+	
+	// add to read set
+	safe_fd_set(fd, &_master_fds, &_max_fds);
+	
 	return fd;
 }
 
@@ -111,26 +138,30 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 	
 	// close all?
 	if(ifName.empty()){
-		for (auto& [key, entry]  : _interfaces){
-			if(entry.fd != -1){
-				close(entry.fd);
-				entry.fd = -1;
+		for (auto& [key, fd]  : _interfaces){
+			if(fd != -1){
+				close(fd);
+				safe_fd_clr(fd, &_master_fds, &_max_fds);
+				_interfaces[ifName] = -1;
 			}
 		}
 		return true;
  	}
-	else for (auto& [key, entry]  : _interfaces){
+	else for (auto& [key, fd]  : _interfaces){
 		if (strcasecmp(key.c_str(), ifName.c_str()) == 0){
-			if(entry.fd != -1){
-				close(entry.fd);
-				entry.fd = -1;
-				}
+			if(fd != -1){
+				close(fd);
+				safe_fd_clr(fd, &_master_fds, &_max_fds);
+				_interfaces[ifName] = -1;
+			}
 			return true;
 		}
 	}
 	if(errorOut) *errorOut = ENXIO;
 	return false;
 }
+
+
 
 bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
@@ -167,17 +198,6 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 			struct timeval tv;
 			long timestamp = 0;
 			
-//			size_t nbytes = read(_fd, &frame, sizeof(struct can_frame));
-//
-//			if(nbytes >= sizeof(struct can_frame)){
-//
-//				struct timeval tv;
-//				gettimeofday(&tv, NULL);
-//				long timestamp = (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
-//				rcvFrame(frame, timestamp);
-//
-//			timed_frame frame;
-//
 			const char *p = line.c_str() ;
 			int n;
 			char canport[20];
@@ -237,12 +257,42 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 }
 
 
+
 void CANBusMgr::run() {
 	
 	FrameDB* frameDB = FrameDB::shared();
-	
-	while(_running){
+	struct can_frame frame;
 
-		usleep(100);
+	while(_running){
+		
+		/* wait for something to happen on the socket */
+		struct timeval selTimeout;
+		selTimeout.tv_sec = 0;       /* timeout (secs.) */
+		selTimeout.tv_usec = 100;            /* 100 microseconds */
+		
+		/* back up master */
+		fd_set dup = _master_fds;
+		
+		int numReady = select(_max_fds+1, &dup, NULL, NULL, &selTimeout);
+		if( numReady == -1 ) {
+			perror("select");
+			_running = false;
+		}
+		
+		/* check which fd is avaialbe for read */
+		for (auto& [ifName, fd]  : _interfaces) {
+			if ((fd != -1)  && FD_ISSET(fd, &dup)) {
+				time_t now =  time(NULL);
+				
+				size_t nbytes = read(fd, &frame, sizeof(struct can_frame));
+				
+				if(nbytes == 0){ // shutdown
+					_interfaces[ifName] = -1;
+				}
+				else if(nbytes > 0){
+					frameDB->saveFrame(ifName, frame, now);
+				}
+			}
+		}
 	}
 }

@@ -21,7 +21,9 @@
 #define ENGINE_GEN_STAT_4 0x4C1
 #define ENGINE_GEN_STAT_2 0x3D1
 #define ENGINE_GEN_STAT_3 0x3F9
- 
+
+#define ENGINE_TORQUE_STAT_2 0x1C3
+
 #define ENGINE_GEN_STAT_5 0x4D1
 #define FUEL_SYSTEM_2  0x1EF
 #define VEHICLE_SPEED_DIST 0x3E9
@@ -41,7 +43,7 @@ static map<uint, string> knownPid = {
 { 0x158, "High Voltage Battery Information 3"},
 { 0x17D, "Antilock_Brake_and_TC_Status_HS"},
 { ENGINE_GEN_STAT, "Engine General Status"},
-{ 0x1C3, "Engine Torque Status 2"},
+{ ENGINE_TORQUE_STAT_2, "Engine Torque Status 2"},
 { 0x1C4, "Torque Request Status"},
 { 0x1C5, "Driver Intended Axle Torque Status"},
 { 0x1C7, "Chassis Engine Torque Request 1"},
@@ -108,6 +110,8 @@ typedef  enum  {
 		TEMP_AIR_INTAKE,
 		TEMP_AIR_AMBIENT,
 		TRANS_GEAR,
+		ENGINE_TORQUE,
+
 		} value_keys_t;
 
 
@@ -127,7 +131,8 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{BAROMETRIC_PRESSURE,{"GM_BAROMETRIC_PRESSURE",	"Barometric Pressure",				FrameDB::KPA}},
 	{TEMP_AIR_INTAKE,		{"GM_INTAKE_TEMP",		"Intake Air Temp",						FrameDB::DEGREES_C}},
 	{TEMP_AIR_AMBIENT,	{"GM_AMBIANT_AIR_TEMP",	"Ambient air temperature",				FrameDB::DEGREES_C}},
-	{TRANS_GEAR,			{"GM_TRANS_GEAR",			"Current Gear",							FrameDB::STRING}}
+	{TRANS_GEAR,			{"GM_TRANS_GEAR",			"Current Gear",							FrameDB::STRING}},
+	{ENGINE_TORQUE,		{"GM_ENGINE_TORQUE",		"Engine Torque Actual",					FrameDB::NM}}
 	};
 
 
@@ -208,6 +213,10 @@ void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eT
 			processTransmissionStatus2(db, frame,when,eTag);
 			break;
  
+		case ENGINE_TORQUE_STAT_2:
+			processEngineTorqueStatus3(db, frame,when,eTag);
+			break;
+ 			
 		case PLAT_CONF:
 			processPlatformConfiguration(db, frame,when,eTag);
 			break;
@@ -216,7 +225,7 @@ void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eT
 			processTransOutRotation(db, frame,when,eTag);
 			break;
 
-		case VEHICLE_SPEED:
+		case VEHICLE_SPEED_DIST:
 			processVehicleSpeed(db, frame,when,eTag);
 			break;
 
@@ -228,6 +237,16 @@ void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eT
 }
 
 
+void GMLAN::processEngineTorqueStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+	
+	bool torqueValid = (frame.data[0] & 0x10) == 0x10;
+	
+	if(torqueValid) {
+		int N = 	(frame.data[0] & 0x0f) <<8 | frame.data[0];
+		float torque =  (N * 0.50) - 848;
+		db->updateValue(schemaKeyForValueKey(ENGINE_TORQUE), to_string(torque), when, eTag);
+	}
+}
 
 void GMLAN::processPlatGenStatus(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 
@@ -272,8 +291,13 @@ void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when,
 
 
 void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	float maf =  ((frame.data[2])  <<8 | frame.data[3]) * 0.01;
-	db->updateValue(schemaKeyForValueKey(MASS_AIR_FLOW), to_string(maf),when, eTag);
+	bool mafValid =  frame.data[0] & 0x80;
+
+	if(mafValid){
+		float maf =  ((frame.data[2])  <<8 | frame.data[3]) * 0.01;
+		db->updateValue(schemaKeyForValueKey(MASS_AIR_FLOW), to_string(maf),when, eTag);
+
+	}
 
 
 };
