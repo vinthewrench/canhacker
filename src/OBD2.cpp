@@ -37,10 +37,10 @@ static map<uint8_t,  valueSchema_t> _schemaMap =
 	{ 0x03,	{"OBD_FUEL_STATUS",	"Fuel System Status",	FrameDB::STRING}},
 	{ 0x04,	{"OBD_ENGINE_LOAD",	"Calculated Engine Load",	FrameDB::PERCENT}},
 	{ 0x05,	{"OBD_COOLANT_TEMP",	"Engine Coolant Temperature",	FrameDB::DEGREES_C}},
-	{ 0x06,	{"OBD_SHORT_FUEL_TRIM_1",	"Short Term Fuel Trim - Bank 1",	FrameDB::PERCENT}},
-	{ 0x07,	{"OBD_LONG_FUEL_TRIM_1",	"Long Term Fuel Trim - Bank 1",	FrameDB::PERCENT}},
-	{ 0x08,	{"OBD_SHORT_FUEL_TRIM_2",	"Short Term Fuel Trim - Bank 2",	FrameDB::PERCENT}},
-	{ 0x09,	{"OBD_LONG_FUEL_TRIM_2",	"Long Term Fuel Trim - Bank 2",	FrameDB::PERCENT}},
+	{ 0x06,	{"OBD_SHORT_FUEL_TRIM_1",	"Short Term Fuel Trim - Bank 1",	FrameDB::FUEL_TRIM}},
+	{ 0x07,	{"OBD_LONG_FUEL_TRIM_1",	"Long Term Fuel Trim - Bank 1",	FrameDB::FUEL_TRIM}},
+	{ 0x08,	{"OBD_SHORT_FUEL_TRIM_2",	"Short Term Fuel Trim - Bank 2",	FrameDB::FUEL_TRIM}},
+	{ 0x09,	{"OBD_LONG_FUEL_TRIM_2",	"Long Term Fuel Trim - Bank 2",	FrameDB::FUEL_TRIM}},
 	{ 0x0A,	{"OBD_FUEL_PRESSURE",	"Fuel Pressure",	FrameDB::KPA}},
 	{ 0x0B,	{"OBD_INTAKE_PRESSURE",	"Intake Manifold Pressure",	FrameDB::KPA}},
 	{ 0x0C,	{"OBD_RPM",	"Engine RPM",	FrameDB::RPM}},
@@ -273,18 +273,55 @@ void OBD2:: processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTa
 			// not handled?
 	
 	}
-	
-	
+ };
+
+// value calculation and corrections
+static string valueForData( uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
+	string value = string();
+
+	if(mode == 0x22){	 // mode 22  J2190
 		
+		uint16_t ext = (pid << 8) | data[0];
+		if(ext == 0x115C) {// oil pressure
+			value = to_string(data[0] * 2 );
+			}
+	}
+	else if(mode == 1 || mode == 2){
+		switch(pid){
+			case 0x42: //OBD_CONTROL_MODULE_VOLTAGE
+				value = to_string( ((data[0] <<8 )| data[1]) / 1000.00) ;
+				break;
+			
+			case 0x6:
+			case 0x7:
+			case 0x8:
+			case 0x9:  //FUEL_TRIM
+				value = to_string(  (data[0] * (100.0/128.0)) - 100. ) ;
+				break;
+				
+		}
+	}
 	
-};
+	if(value.empty()){
+		switch(len){
+				case 1: value = to_string(data[0]); break;
+				case 2: value = to_string((data[0] <<8 )| data[1]); break;
+				case 3: value = to_string( (data[0] <<12)|(data[1] <<8) | data[2]); break;
+				case 4: value = to_string( (data[0] <<16) || (data[1] <<12)|(data[2] <<8) | data[3]); break;
+			default:  value =string( (char* )data, len); break;
+			}
+		}
+	
+	return value;;
+}
+
 
 void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 										canid_t can_id,
 									   uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
 	
 	valueSchema_t* schema = NULL;
-	 
+ 
 	switch(mode){
 		case 1:
 		case 2:
@@ -310,23 +347,11 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 		}
 	}
 	
-	string value = string();
-	
-	switch(len){
-			case 1: value = to_string(data[0]); break;
-			case 2: value = to_string((data[0])  <<8 | data[1]); break;
-			case 3: value = to_string( (data[0] <<12)|(data[1] <<8) | data[2]); break;
-			case 4: value = to_string( (data[0] <<16) || (data[1] <<12)|(data[2] <<8) | data[3]); break;
-		default:  value =string( (char* )data, len); break;
-	 	}
-			
+	string value = valueForData(mode,pid,len, data);
 	db->updateValue(schema->title,value,when, eTag);
-	
-// 	printf("%s\r\n",hexDumpOBDData(can_id, mode, pid, schema, len, data).c_str());
-
 }
 
-
+ 
 string OBD2::descriptionForFrame(can_frame_t frame){
 	string name = "";
 	

@@ -25,8 +25,30 @@
 #include <stdlib.h>   // exit()
 #include <termios.h>
 
+#include <cstdlib>
+#include <iostream>
+#include <stdexcept>
 
+#include <execinfo.h>
+
+#include <execinfo.h>
 using namespace std;
+
+void
+handler()
+{
+	 void *trace_elems[20];
+	 int trace_elem_count(backtrace( trace_elems, 20 ));
+	 char **stack_syms(backtrace_symbols( trace_elems, trace_elem_count ));
+	 for ( int i = 0 ; i < trace_elem_count ; ++i )
+	 {
+		  std::cout << stack_syms[i] << "\r\n";
+	 }
+	 free( stack_syms );
+
+	 exit(1);
+}
+
 
 
 //GMLAN	gmlan;
@@ -131,6 +153,8 @@ static bool READCmdHandler( stringvector line,
 		FrameDB::shared()->clearFrames(ifName);
 		FrameDB::shared()->clearValues();
 	
+		(cb)(true);
+
 		
 	 	dumper.start(ifName);
 		if( canBus->readFramesFromFile(fileName, &errnum)) {
@@ -139,9 +163,6 @@ static bool READCmdHandler( stringvector line,
 			mgr->sendReply( "OK");
 			(cb)(true);
 			
-	//		FrameDB::shared()->dumpValues();
-			fflush(stdout);
-
 			return true;
 		}
 		else {
@@ -184,26 +205,33 @@ void registerCommandsLineFunctions() {
 
 int main(int argc, const char * argv[]) {
 	
-	CANBusMgr*	canBus = CANBusMgr::shared();
-	FrameDB*	frameDB = FrameDB::shared();
+	std::set_terminate( handler );
 
+	fflush(stdout);
+  printf("\x1b[0;0H\x1b[2J");
+  printf("Can Hacker!\r\n");
+
+	GMLAN gmlan;
+	Wranger2010 jeep;
+	OBD2	obdii;
+
+	FrameDB*	frameDB = FrameDB::shared();
+	CANBusMgr*	canBus = CANBusMgr::shared();
+	
 	CmdLineMgr  cmdLineMgr;
 	registerCommandsLineFunctions();
-	
-	try {
-		GMLAN gmlan;
- 		Wranger2010 jeep;
-		OBD2	obdii;
-		
-		frameDB->registerProtocol("can1", &gmlan);
-		frameDB->registerProtocol("can1", &obdii);
-		
-		frameDB->registerProtocol("can0", &jeep);
-		frameDB->registerProtocol("can0", &obdii);
 
-		canBus->registerHandler("can0");
-		canBus->registerHandler("can1");
-		
+	frameDB->registerProtocol("can1", &gmlan);
+	frameDB->registerProtocol("can1", &obdii);
+	
+	frameDB->registerProtocol("can0", &jeep);
+	frameDB->registerProtocol("can0", &obdii);
+
+	canBus->registerHandler("can0");
+	canBus->registerHandler("can1");
+
+
+	try {
 		struct termios tty_opts_backup, tty_opts_raw;
 		if (!isatty(STDIN_FILENO)) {
 			printf("Error: stdin is not a TTY\n");
@@ -215,15 +243,17 @@ int main(int argc, const char * argv[]) {
 		
 		// Change TTY settings to raw mode
 		cfmakeraw(&tty_opts_raw);
+ 	//	tty_opts_raw.c_iflag |=  (IXON );
+ //		tty_opts_raw.c_iflag &= ~(IGNBRK);
+	
+
 		tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_raw);
-		
-		
+ 
 		//	struct winsize ws;
 		//	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0  || ws.ws_col > 0) {
 		//		printf("col : %d, rows: %hu \n\r",ws.ws_col,ws.ws_row);
 		//		}
 		
-		screen.clearScreen();
 		cmdLineMgr.start();
 		
 		while(cmdLineMgr.isRunning()){
@@ -234,9 +264,7 @@ int main(int argc, const char * argv[]) {
 		
 		// Restore previous TTY settings
 		tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_backup);
-		
-	 
-		
+			
 		
 	}
 	catch ( const CanMgrException& e)  {

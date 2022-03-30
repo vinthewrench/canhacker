@@ -87,6 +87,7 @@ typedef  enum  {
 		FUEL_LEVEL,
 		DOORS,
 		CLOCK,
+		RPM,
 } value_keys_t;
 
 typedef FrameDB::valueSchema_t valueSchema_t;
@@ -94,10 +95,11 @@ typedef FrameDB::valueSchema_t valueSchema_t;
 static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{STEERING_ANGLE,		{"JK_STEERING_ANGLE",			"Steering Angle",							FrameDB::DEGREES}},
 	{VEHICLE_DISTANCE,	{"JK_VEHICLE_DISTANCE",			"Vehicle Distance Driven",				FrameDB::KM}},
-	{KEY_POSITION,			{"JK_KEY_POSITION",				"Key Position",							FrameDB::STRING}},
+	{KEY_POSITION,			{"JK_KEY_POSITION",				"Ignition Key Position",							FrameDB::STRING}},
 	{FUEL_LEVEL,			{"JK_FUEL_LEVEL",					"Fuel Level",								FrameDB::PERCENT}},
 	{DOORS,					{"JK_DOORS",						"Door State",								FrameDB::BINARY}},
 	{CLOCK,					{"JK_CLOCK",						"Clock Time",								FrameDB::STRING}},
+	{RPM,						{"JK_ENGINE_RPM",					"Engine RPM",								FrameDB::RPM}},
 	};
 
 
@@ -128,17 +130,53 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 			uint16_t xx = (frame.data[2] <<8 | frame.data[3]);
 			if (xx != 0xFFFF){
 				float angle = xx - 4096. ;
-				xx = angle * 0.4;
-				db->updateValue(schemaKeyForValueKey(STEERING_ANGLE), to_string(xx), when, eTag);
+				angle = angle * 0.4;
+				db->updateValue(schemaKeyForValueKey(STEERING_ANGLE), to_string((int)angle), when, eTag);
 			};
 			
  	 		}
 			break;
 
+		case 0x20B:
+		{
+			string value;
+			uint8_t pos =  frame.data[0];
+			switch (pos) {
+				case 0x00:
+					value = "No Key";
+					break;
+
+				case 0x01:
+					value = "OFF";
+					break;
+
+				case 0x61:
+					value = "ACC";
+					break;
+
+				case 0x81:
+					value = "RUN";
+					break;
+					
+				case 0xA1:
+					value = "START";
+					break;
+
+				default:
+ 					break;
+			}
+			
+			if(!value.empty()){
+				db->updateValue(schemaKeyForValueKey(KEY_POSITION), value, when, eTag);
+			}
+		}
+			break;
+			
 		case 0x214:
 		{
-			int dist = 	(frame.data[0] << 12  | frame.data[1] <<8  | frame.data[2] );
-			db->updateValue(schemaKeyForValueKey(VEHICLE_DISTANCE), to_string(dist), when, eTag);
+			uint32_t dist = 	(frame.data[0] << 16  | frame.data[1] <<8  | frame.data[2] );
+			if(dist != 0xffffff)
+				db->updateValue(schemaKeyForValueKey(VEHICLE_DISTANCE), to_string(dist), when, eTag);
 		}
 			break;
 
@@ -156,6 +194,16 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		}
 			break;
 
+		case 0x2CE:
+		{
+			uint16_t xx = (frame.data[0] <<8 | frame.data[1]);
+			if (xx != 0xFFFF){
+				xx *= 4;
+				db->updateValue(schemaKeyForValueKey(RPM), to_string(xx), when, eTag);
+			};
+		}
+			break;
+			
 		case 0x3E6:
 		{
 			char str[10];

@@ -46,6 +46,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2E10F55D27F380170042DF1A /* libunwind.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libunwind.tbd; path = usr/lib/system/libunwind.tbd; sourceTree = SDKROOT; };
 		2EFC241727E926AF00DB9D1F /* canhacker */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = canhacker; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EFC242527E926DC00DB9D1F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = src/main.cpp; sourceTree = "<group>"; };
 		2EFC242B27E926F300DB9D1F /* can_raw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = can_raw.h; path = macincludes/can_raw.h; sourceTree = "<group>"; };
@@ -96,6 +97,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2E10F55C27F380170042DF1A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2E10F55D27F380170042DF1A /* libunwind.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2EFC240E27E926AF00DB9D1F = {
 			isa = PBXGroup;
 			children = (
@@ -105,6 +114,7 @@
 				2EFC244027E92B0900DB9D1F /* Cmdline Stuff */,
 				2EFC242127E926CC00DB9D1F /* src */,
 				2EFC241827E926AF00DB9D1F /* Products */,
+				2E10F55C27F380170042DF1A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -388,6 +398,10 @@
 				DEVELOPMENT_TEAM = PDXWT4JFG9;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_WARN_PEDANTIC = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/system",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -400,6 +414,10 @@
 				DEVELOPMENT_TEAM = PDXWT4JFG9;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_WARN_PEDANTIC = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/system",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

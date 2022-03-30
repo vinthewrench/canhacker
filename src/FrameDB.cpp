@@ -11,9 +11,8 @@ FrameDB *FrameDB::sharedInstance = NULL;
 
 
 FrameDB::FrameDB(){
-	_interfaces.clear();
 	_lastEtag = 0;
-
+	_interfaces.clear();
 	_schema.clear();
 	_values.clear();
 }
@@ -112,6 +111,7 @@ void FrameDB::clearFrames(string ifName){
 			return;
 		}
 	}
+	_lastEtag = 0;
 }
 
  
@@ -121,7 +121,6 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 
 	bitset<8> changed;
 	bool isNew = false;
-	uint line = 0;
 	long avgTime = 0;
 	time_t now = time(NULL);
 	
@@ -205,8 +204,8 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		}
 	}
 	
-	// tell the prorocls something changed
-	if(isNew || changed.count() > 0)
+	// tell the protocols something changed
+ 	if(isNew || (changed.count() > 0))
 		for(auto proto : *theProtocols ){
 			proto->processFrame(this, frame, now, _lastEtag );
 		};
@@ -214,21 +213,30 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 
 
 vector<canid_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *eTagOut ){
-	vector<canid_t> can_ids;
 	
 	std::lock_guard<std::mutex> lock(_mutex);
+	vector<canid_t> can_ids = {};
 
 	// Does the interface exist?
 	if(ifName.empty() || _interfaces.count(ifName) == 0) {
-		throw CanMgrException("ifName name is not registered");
+			throw CanMgrException("ifName name is not registered");
 	}
 	
 		// get the map entry for that interface.
 	auto m1 = _interfaces.find(ifName);
+	
+//	if(m1 == _interfaces.end()) {
+//		throw CanMgrException("bug 1");
+//
+//	}
 	auto theFrames = &m1->second.frames;
+//	if(!theFrames) {
+//		throw CanMgrException("bug 2");
+//
+//	}
 
 	for (const auto& [canid, frame] : *theFrames) {
-		if(frame.eTag < eTag)
+		if(frame.eTag <= eTag)
 			can_ids.push_back(canid);
 	}
 	
@@ -239,7 +247,7 @@ vector<canid_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_
 }
 
 vector<canid_t>  	FrameDB::framesOlderthan(string ifName, time_t time){
-	vector<canid_t> can_ids;
+	vector<canid_t> can_ids = {};
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 
@@ -286,26 +294,6 @@ bool FrameDB::frameWithCanID(string ifName, canid_t can_id, frame_entry *frameOu
 	
 }
 
-// MARK: -  VALUES
-
-///	_schemaMap = {
-//		{"Bool", BOOL},			// Bool ON/OFF
-//		{"Int", INT},				// Int
-//		{"Binary", BINARY},		// Binary 8 bits 000001
-//		{"String", STRING},		// string
-//
-//		{"%", PERCENT} ,			// (per hundred) sign PERCENT
-//		{"mV", MILLIVOLTS},		// mV
-//		{"mA",MILLIAMPS},			// mA
-//		{"sec", SECONDS},			// sec
-//		{"mins",MINUTES},			// mins
-//		{"degC", DEGREES_C},		// degC
-//		{"V", VOLTS},				// V
-//		{"A", AMPS},					// A
-//		{"rpm", RPM},					// RPM
-//		{"ignore", IGNORE}				// ignore
-//		};
-
 
 FrameDB::valueSchema_t FrameDB::schemaForKey(string_view key){
 	valueSchema_t schema = {"", "", UNKNOWN};
@@ -319,6 +307,7 @@ FrameDB::valueSchema_t FrameDB::schemaForKey(string_view key){
 
 void  FrameDB::clearValues(){
 	_values.clear();
+	_lastEtag = 0;
 }
 
 void FrameDB::addSchema(string_view key,  valueSchema_t schema){
@@ -329,44 +318,64 @@ void FrameDB::addSchema(string_view key,  valueSchema_t schema){
 
 void FrameDB::updateValue(string_view key, string value, time_t when,  eTag_t eTag){
 	
+// 	cntr++;
+	
 	if(when == 0)
 		when = time(NULL);
 
 	_values[key] = {when, eTag, value};
 }
 
-
-
-
-//// WRITE THESE
-vector<string>  	FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag){
-	
-	std::lock_guard<std::mutex> lock(_mutex);
-	vector<string> values;
-	
-	return values;
-};
-
-vector<string>  	FrameDB::valuesOlderthan(time_t time){
-	std::lock_guard<std::mutex> lock(_mutex);
-	vector<string> values;
-	
-	return values;
-
-};
-
-bool FrameDB::valueWithKey(string key, string &value){
+vector<string_view> FrameDB::allValueKeys(){
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	return false;
-};
-
-void FrameDB::dumpValues(){
-	printf("\r\n------\r\n");
-	for( auto &[key,value] : _values){
-		auto schema = schemaForKey(key);
-		printf("%30s: %s \r\n", string(schema.title).c_str(), value.value.c_str());
-		
+	vector<string_view> keys;
+	keys.clear();
+	
+	for (const auto& [key, value] : _values) {
+			keys.push_back(key);
 	}
-	
+
+	return keys;
 }
+  
+
+vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag){
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	vector<string_view> keys = {};
+	
+	for (const auto& [key, value] : _values) {
+		if(value.eTag <= eTag)
+			keys.push_back(key);
+	}
+
+	return keys;
+};
+
+vector<string_view> FrameDB::valuesOlderthan(time_t time){
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	vector<string_view> keys = {};
+	
+	for (const auto& [key, value] : _values) {
+		if(value.lastUpdate < time)
+			keys.push_back(key);
+	}
+
+	return keys;
+};
+
+
+bool FrameDB::valueWithKey(string_view key, string *valueOut){
+	std::lock_guard<std::mutex> lock(_mutex);
+	
+	if(_values.count(key) == 0 )
+		return false;
+
+	if(valueOut){
+		*valueOut = _values[key].value;
+	}
+ 	
+	return true;
+};

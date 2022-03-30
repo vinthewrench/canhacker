@@ -88,7 +88,7 @@ class FrameDB {
 		GPS,				// grams per second
 		KM,				// Kilometers
 		RATIO,			//
-		
+		FUEL_TRIM,		// 
 		SPECIAL,
 		IGNORE,
 		UNKNOWN,
@@ -107,12 +107,12 @@ class FrameDB {
 	void updateValue(string_view key, string value, time_t when,  eTag_t eTag);
 	void clearValues();
  
-	vector<string>  	valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag);
-	vector<string>  	valuesOlderthan(time_t time);
-	bool 					valueWithKey(string key, string &value);
-
-	void dumpValues();
-protected:
+	vector<string_view> 		allValueKeys();
+	vector<string_view>  	valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag);
+	vector<string_view>  	valuesOlderthan(time_t time);
+	bool 							valueWithKey(string_view key, string *value);
+ 
+ protected:
  
 private:
 	
@@ -138,7 +138,6 @@ private:
 		string			value;
 		} value_t;
 
-//	map<string_view,valueSchemaUnits_t>  _schemaMap;
 	map<string_view, valueSchema_t>			_schema;
 	map<string_view, value_t> _values;
  

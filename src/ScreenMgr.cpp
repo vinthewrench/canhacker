@@ -18,7 +18,7 @@ ScreenMgr::~ScreenMgr(){
 
 
 void ScreenMgr::clearScreen(){
-	output("\x1b[2J\x1b[H");
+	output("\x1b[H\x1b[2J");
 }
 
 void ScreenMgr::output(string str){

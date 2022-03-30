@@ -84,9 +84,9 @@ static map<uint, string> knownPid = {
 { PLAT_CONF, "Platform Configuration Data"},
 { 0x4F1, "Powertrain Configuration Data"},
 { 0x4F3, "Powertrain Configuration Data 2"},
-{ 0x772, "Diagnostic Trouble Code Information Extended"},
-{ 0x77A, "Diagnostic Trouble Code Information Extended"},
-{ 0x77F, "Diagnostic Trouble Code Information Extended"},
+{ 0x772, "Diagnostic Trouble Code Information 1 Extended"},
+{ 0x77A, "Diagnostic Trouble Code Information 2 Extended"},
+{ 0x77F, "Diagnostic Trouble Code Information 3 Extended"},
 { 0x3F3, "Power Pack General Status"},
 { 0x3F7, "Hybrid T emperature Status"},
 { 0x1D9, "Hybrid Balancing Request"},
@@ -244,7 +244,6 @@ void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when,
 	db->updateValue(schemaKeyForValueKey(ENGINE_RUNNING), to_string(running), when, eTag);
 
 	int rpm = 	frame.data[1] <<8 | frame.data[2];
-	rpm = rpm / 4;
 	db->updateValue(schemaKeyForValueKey(ENGINE_RPM), to_string(rpm), when, eTag);
  
  };
@@ -266,7 +265,7 @@ void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when,
 };
 
 void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	float oilpress =  (frame.data[2] * 4)  * 0.145038;
+	float oilpress =  (frame.data[2] * 4);
 	db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when, eTag);
 };
 
@@ -284,13 +283,13 @@ void GMLAN::processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when,
 	float baro		= 	(frame.data[1]  / 2.0);
 	db->updateValue(schemaKeyForValueKey(BAROMETRIC_PRESSURE), to_string(baro),when, eTag);
  
-	float coolTemp = 	frame.data[2]  - 40;
+	float coolTemp = 	frame.data[2];
 	db->updateValue(schemaKeyForValueKey(TEMP_COOLANT), to_string(coolTemp),when, eTag);
 
-	float airIn 	=	frame.data[3]  - 40;
+	float airIn 	=	frame.data[3];
 	db->updateValue(schemaKeyForValueKey(TEMP_AIR_INTAKE), to_string(airIn),when, eTag);
 
-	float airAmb =  	(frame.data[4] *.5) - 40;
+	float airAmb =  	(frame.data[4] *.5);
 	db->updateValue(schemaKeyForValueKey(TEMP_AIR_AMBIENT), to_string(airAmb),when, eTag);
 
 };
@@ -327,7 +326,7 @@ void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t wh
 };
 
 void GMLAN::processTransmissionStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	float transTemp =  frame.data[1]  - 40  ;
+	float transTemp =  frame.data[1];
 	db->updateValue(schemaKeyForValueKey(TEMP_TRANSMISSION), to_string(transTemp),when, eTag);
 
 };

@@ -134,7 +134,6 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 
 bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
-//	printf("\x1b[2J\x1b[0;0H\x1b[?25l");
 	
 	std::ifstream	ifs;
 	bool 				statusOk = false;
@@ -223,6 +222,9 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 		statusOk = true;
 		ifs.close();
 		
+		usleep(500);
+
+		
 	//	frameDB->dumpFrames();
 	}
 	catch(std::ifstream::failure &err) {
@@ -231,8 +233,6 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 		statusOk = false;
 	}
 	
-//	printf("\x1b[70;0H\x1b[?25h");
-
 	return statusOk;
 }
 

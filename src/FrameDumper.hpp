@@ -29,6 +29,9 @@ public:
 private:
 	void run();
 
+	void printChangedFrames(string ifName);
+	void printChangedValues(int lastLine, bool redraw);
+	
 	std::thread  	_thread;		 //Internal thread, this is in order to start and stop the thread from
 	bool 				_running;	 //Flag for starting and terminating the main loop
 	string 			_ifName;
@@ -40,7 +43,13 @@ private:
 	
 	eTag_t 			_lastEtag;
 
-	map<canid_t, int> _lineMap;
-	int _lastLine;
+	int 					_topOffset;
+	
+	map<canid_t, int> _frameLineMap;
+	int _lastFrameLine;
+
+	map<string_view, int> _valueLineMap;
+	int _lastValueLine;
+
 	
 };
