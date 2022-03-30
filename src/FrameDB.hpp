@@ -14,7 +14,9 @@
 #include <algorithm>
 #include <mutex>
 #include <bitset>
- 
+#include <strings.h>
+#include <cstring>
+
 #include "CanProtocol.hpp"
 
 using namespace std;
