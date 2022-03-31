@@ -21,9 +21,11 @@
 
 using namespace std;
 
+typedef uint8_t  ifTag_t;		// we combine ifTag and frameiD to create a refnum
+typedef uint64_t frameTag_t;		// < ifTag_t | canID>
+
 struct  frame_entry{
 	can_frame_t 	frame;
-//	uint				line;			// line number for this frame
 	long				timeStamp;	// from canbus (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
 	long				avgTime;		 // how often do we see these  ((now - lastTime) + avgTime) / 2
 	eTag_t 			eTag;
@@ -49,17 +51,18 @@ class FrameDB {
 	
 	bool registerProtocol(string ifName,  CanProtocol *protocol = NULL);
 	void unRegisterProtocol(string ifName, CanProtocol *protocol);
-	vector<CanProtocol*>	protocolsForInterface(string ifName);
+	vector<CanProtocol*>	protocolsForTag(frameTag_t tag);
 
 	eTag_t lastEtag() { return  _lastEtag;};
 	
 
 // Frame database
 	void saveFrame(string ifName, can_frame_t frame, long timeStamp);
-	void clearFrames(string ifName);
-	vector<canid_t>  	framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *newEtag);
-	vector<canid_t>  	framesOlderthan(string ifName, time_t time);
-	bool 					frameWithCanID(string ifName, canid_t can_id, frame_entry *frame);
+	void clearFrames(string ifName = "");
+	
+	vector<frameTag_t>  	framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *newEtag);
+	vector<frameTag_t>  	framesOlderthan(string ifName, time_t time);
+	bool 						frameWithTag(frameTag_t tag, frame_entry *frame);
 	
 // value Database
 	
@@ -124,8 +127,11 @@ private:
 	mutable std::mutex _mutex;
 	eTag_t _lastEtag;
 	
+	ifTag_t _lastInterfaceTag;
+ 
 	typedef struct {
 		string							ifName;
+		ifTag_t							ifTag;		// we combine ifTag and frameiD to create a refnum
 		vector<CanProtocol*>   		protocols;
 		map<canid_t,frame_entry> 	frames;
 	} interfaceInfo_t;

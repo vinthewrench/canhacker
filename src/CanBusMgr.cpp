@@ -174,7 +174,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 	
 	FrameDB* frameDB = FrameDB::shared();
  
-	frameDB->clearFrames("");
+	frameDB->clearFrames();
 	if(filePath.empty())
 			return false;
  
@@ -215,7 +215,6 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 			}
 			
 			timestamp = (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
-
 			p = p+n;
 			
 			frame.can_dlc = 0;
@@ -244,9 +243,6 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 		ifs.close();
 		
 		usleep(500);
-
-		
-	//	frameDB->dumpFrames();
 	}
 	catch(std::ifstream::failure &err) {
 		

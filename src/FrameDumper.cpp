@@ -9,13 +9,28 @@
 #include <unistd.h>
 #include <sys/time.h>
 
- 
-static inline  std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8> changed) {
+#define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
+
+std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8> changed) {
 	
-	char      	 lineBuf[120];
+	char      	 lineBuf[256];
 	char       	 *p = lineBuf;
 
-	p += sprintf(p, "%03X [%d] ",  frame.can_id, frame.can_dlc);
+	canid_t can_id = frame.can_id & CAN_SFF_MASK;
+	
+	const char* resetColor = "\x1b[0m";	// reset color
+	const char* frameIDColor = "\x1b[0m";	// reset color
+	
+	if((can_id & CAN_OBD_MASK) == 0x700) {
+		if(can_id == 0x7DF)
+			frameIDColor = "\x1b[97m"; 	// white
+		else if(can_id >= 0x7e0 && can_id <= 0x7E7) // OBD Request
+			frameIDColor =  "\x1b[96m"; 	// white
+		else 	if(can_id >= 0x7e8 && can_id <= 0x7EF) 	// OBD reply
+			frameIDColor = "\x1b[95m"; 	// magenta
+	}
+	
+	p += sprintf(p, "%s%03X%s [%d] ", frameIDColor,  frame.can_id, resetColor, frame.can_dlc);
 	
 	for (int i = 0; i < frame.can_dlc; i++){
 			const char* useColor = "";
@@ -24,7 +39,6 @@ static inline  std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8>
 			else if (changed.test(i))  useColor = "\x1b[91m";
 	
 			p += sprintf(p,"%s%02X\x1b[0m ",  useColor, frame.data[i]);
-
 	}
 		 
 	for (int i = 7; i >=  frame.can_dlc ; i--) p += sprintf(p,"   ");
@@ -163,9 +177,8 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 				double pres = stof(value);
 				pres = pres * 0.1450377377;
 				p += sprintf(p, "%d psi", (int) pres);
-
 			}
-				break;
+			break;
 				
 			case FrameDB::RPM:
 			{
@@ -196,7 +209,7 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 				unsigned long val = stoul(value);
 				if(val < 256){
 					for(int i = 7 ; i >= 0 ; i--)
-						p += sprintf(p, "%c ", (val & 0x1) >> i ?'1':'0');
+						p += sprintf(p, "%c ", ((val >> i) & 1) ?'1':'0');
 				}
 			}
 				break;
@@ -279,8 +292,8 @@ void FrameDumper::printChangedFrames(string ifName){
 	FrameDB* frameDB = FrameDB::shared();
 	time_t now = time(NULL);
 	
-	auto can_ids = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &newEtag);
-	auto old_ids = frameDB->framesOlderthan(ifName, now - 5);
+	auto new_tags = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &newEtag);
+	auto old_tags = frameDB->framesOlderthan(ifName, now - 5);
 	auto allKeys = frameDB->allValueKeys();
 
 	printf("\x1b[%d;0H\x1b[2K", 0);
@@ -289,17 +302,18 @@ void FrameDumper::printChangedFrames(string ifName){
  
 	bool addedLines = false;
  
-	for(auto can_id : can_ids){
+	for(auto tag : new_tags){
 		frame_entry frame;
-		bool isOldFrame = find(old_ids.begin(), old_ids.end(), can_id) != old_ids.end();
-		if( frameDB->frameWithCanID(ifName, can_id, &frame)){
+		bool isOldFrame = find(old_tags.begin(), old_tags.end(), tag) != old_tags.end();
+		
+		if( frameDB->frameWithTag(tag, &frame)){
 			
 			int line = 0;
-			auto it =  _frameLineMap.find(can_id);
+			auto it =  _frameLineMap.find(tag);
 			if(it != _frameLineMap.end()) {
 				line = it->second;
 			}else {
-				_frameLineMap[can_id] = _lastFrameLine++;
+				_frameLineMap[tag] = _lastFrameLine++;
 				line = _lastFrameLine;
 				addedLines = true;
 			}
@@ -312,7 +326,7 @@ void FrameDumper::printChangedFrames(string ifName){
 					 avgTime,
 					 hexDumpFrame(frame.frame, isOldFrame, frame.lastChange).c_str());
 			
-			auto protos = frameDB->protocolsForInterface(ifName);
+			auto protos = frameDB->protocolsForTag(tag);
 			for( auto proto : protos){
 				auto str = proto->descriptionForFrame(frame.frame);
 				if(!str.empty()){

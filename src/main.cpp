@@ -141,20 +141,19 @@ static bool READCmdHandler( stringvector line,
 	}
 	else {
 		string ifName = "";
-		if( fileName.find("jeep") != string::npos)
-			ifName = "can0";
-		else if( fileName.find("chevy") != string::npos)
-			ifName = "can1";
-		else if( fileName.find("t0") != string::npos)
-			ifName = "can1";
-		else if( fileName.find("vin") != string::npos)
-			ifName = "can1";
+//		if( fileName.find("jeep") != string::npos)
+//			ifName = "can0";
+//		else if( fileName.find("chevy") != string::npos)
+//			ifName = "can1";
+//		else if( fileName.find("t0") != string::npos)
+//			ifName = "can1";
+//		else if( fileName.find("vin") != string::npos)
+//			ifName = "can1";
 
-		FrameDB::shared()->clearFrames(ifName);
+		FrameDB::shared()->clearFrames();
 		FrameDB::shared()->clearValues();
 	
 		(cb)(true);
-
 		
 	 	dumper.start(ifName);
 		if( canBus->readFramesFromFile(fileName, &errnum)) {

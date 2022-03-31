@@ -45,7 +45,7 @@ private:
 
 	int 					_topOffset;
 	
-	map<canid_t, int> _frameLineMap;
+	map<frameTag_t, int> _frameLineMap;
 	int _lastFrameLine;
 
 	map<string_view, int> _valueLineMap;

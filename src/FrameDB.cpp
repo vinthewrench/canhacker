@@ -9,9 +9,20 @@
 
 FrameDB *FrameDB::sharedInstance = NULL;
 
+static inline frameTag_t makeFrameTag(ifTag_t tag, canid_t canID){
+	return  (( (uint64_t) tag) << 32) | canID;
+};
+
+static inline void  splitFrameTag(frameTag_t fTag, ifTag_t * ifTag, canid_t *canID){
+	
+	if(canID) *canID = fTag & 0xFFFFFFFF;
+	if(ifTag) *ifTag = ((fTag >> 32) & 0xFF);
+};
+
 
 FrameDB::FrameDB(){
 	_lastEtag = 0;
+	_lastInterfaceTag = 0;
 	_interfaces.clear();
 	_schema.clear();
 	_values.clear();
@@ -30,6 +41,7 @@ bool FrameDB::registerProtocol(string ifName, CanProtocol *protocol) {
 		ifInfo.ifName = ifName;
 		ifInfo.protocols.clear();
 		ifInfo.frames.clear();
+		ifInfo.ifTag = _lastInterfaceTag++;
 		_interfaces[ifName] = ifInfo;
 	}
 
@@ -81,16 +93,22 @@ void FrameDB::unRegisterProtocol(string ifName, CanProtocol *protocol){
 }
 
 
-vector<CanProtocol*>	FrameDB::protocolsForInterface(string ifName){
+vector<CanProtocol*>	FrameDB::protocolsForTag(frameTag_t tag){
 	vector<CanProtocol*> protos;
 	
-	if(_interfaces.count(ifName)){
-		auto m1 = _interfaces.find(ifName);
-		if(m1 != _interfaces.end()){
-			protos = m1->second.protocols;
+ 	ifTag_t	ifTag = 0;
+	
+	splitFrameTag(tag, &ifTag, NULL);
+
+	for (const auto& [name ,_ ] : _interfaces){
+		auto info = &_interfaces[name];
+		if(info->ifTag	== ifTag){
+			protos = info->protocols;
+			break;
 		}
 	}
-	return protos;
+
+ 	return protos;
 }
 
 
@@ -104,6 +122,8 @@ void FrameDB::clearFrames(string ifName){
 		for (auto& [key, entry]  : _interfaces){
 			entry.frames.clear();
 		}
+		
+		clearValues();
 	}
 	else for (auto& [key, entry]  : _interfaces){
 		if (strcasecmp(key.c_str(), ifName.c_str()) == 0){
@@ -137,6 +157,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		ifInfo.ifName = ifName;
 		ifInfo.protocols.clear();
 		ifInfo.frames.clear();
+		ifInfo.ifTag = _lastInterfaceTag++;
 		_interfaces[ifName] = ifInfo;
 	}
 	
@@ -212,86 +233,77 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 }
 
 
-vector<canid_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *eTagOut ){
+vector<frameTag_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *eTagOut ){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
-	vector<canid_t> can_ids = {};
-
-	// Does the interface exist?
-	if(ifName.empty() || _interfaces.count(ifName) == 0) {
-			throw CanMgrException("ifName name is not registered");
-	}
+	vector<frameTag_t> tags = {};
 	
-		// get the map entry for that interface.
-	auto m1 = _interfaces.find(ifName);
-	
-//	if(m1 == _interfaces.end()) {
-//		throw CanMgrException("bug 1");
-//
-//	}
-	auto theFrames = &m1->second.frames;
-//	if(!theFrames) {
-//		throw CanMgrException("bug 2");
-//
-//	}
-
-	for (const auto& [canid, frame] : *theFrames) {
-		if(frame.eTag <= eTag)
-			can_ids.push_back(canid);
-	}
+	for (const auto& [name ,_ ] : _interfaces)
+		if(ifName.empty() || ifName == name ) {
+			auto info = &_interfaces[name];
+			
+			auto theFrames = &info->frames;
+			
+			for (const auto& [canid, frame] : *theFrames) {
+				if(frame.eTag <= eTag){
+					tags.push_back(makeFrameTag(info->ifTag, canid));
+				}
+			}
+		}
 	
 	if(eTagOut)
 		*eTagOut = _lastEtag;
 	
-	return can_ids;
+	return tags;
 }
 
-vector<canid_t>  	FrameDB::framesOlderthan(string ifName, time_t time){
-	vector<canid_t> can_ids = {};
+vector<frameTag_t>  	FrameDB::framesOlderthan(string ifName, time_t time){
+	vector<frameTag_t> tags = {};
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	// Does the interface exist?
-	if(ifName.empty() || _interfaces.count(ifName) == 0) {
-		throw CanMgrException("ifName name is not registered");
-	}
 	
-		// get the map entry for that interface.
-	auto m1 = _interfaces.find(ifName);
-	auto theFrames = &m1->second.frames;
-
-	for (const auto& [canid, frame] : *theFrames) {
-		if(frame.updateTime < time)
-			can_ids.push_back(canid);
-	}
+	for (const auto& [name ,_ ] : _interfaces)
+		if(ifName.empty() || ifName == name ) {
+			auto info = &_interfaces[name];
+			
+			auto theFrames = &info->frames;
+			
+			for (const auto& [canid, frame] : *theFrames) {
+				if(frame.updateTime < time)
+					tags.push_back(makeFrameTag(info->ifTag, canid));
+			}
+		}
 	
-	return can_ids;
+	return tags;
 }
 
-bool FrameDB::frameWithCanID(string ifName, canid_t can_id, frame_entry *frameOut){
+bool FrameDB::frameWithTag(frameTag_t tag, frame_entry *frameOut){
+	
+	std::lock_guard<std::mutex> lock(_mutex);
 	
 	frame_entry entry;
-		
-	std::lock_guard<std::mutex> lock(_mutex);
-
-	// Does the interface exist?
-	if(ifName.empty() || _interfaces.count(ifName) == 0) {
-		throw CanMgrException("ifName name is not registered");
-	}
-		// get the map entry for that interface.
-	auto m1 = _interfaces.find(ifName);
-	auto theFrames = &m1->second.frames;
-
-	if(theFrames->count(can_id) == 0 )
-		return false;
 	
-	if(frameOut){
-		auto e = theFrames->find(can_id);
-		*frameOut =  e->second;
-	}
- 
-	return true;
+	canid_t 	can_id = 0;
+	ifTag_t	ifTag = 0;
 	
+	splitFrameTag(tag, &ifTag, &can_id);
+	
+	for (const auto& [name ,_ ] : _interfaces) {
+		auto info = &_interfaces[name];
+		if(info->ifTag == ifTag){
+			auto theFrames = &info->frames;
+			if(theFrames->count(can_id) == 0 )
+				return false;
+
+			if(frameOut){
+				auto e = theFrames->find(can_id);
+				*frameOut =  e->second;
+				return true;
+			}
+ 		}
+	}
+	return false;
 }
 
 
