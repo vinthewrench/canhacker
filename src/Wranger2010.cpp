@@ -88,6 +88,7 @@ typedef  enum  {
 		DOORS,
 		CLOCK,
 		RPM,
+		VIN,
 } value_keys_t;
 
 typedef FrameDB::valueSchema_t valueSchema_t;
@@ -100,11 +101,16 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{DOORS,					{"JK_DOORS",						"Door State",								FrameDB::BINARY}},
 	{CLOCK,					{"JK_CLOCK",						"Clock Time",								FrameDB::STRING}},
 	{RPM,						{"JK_ENGINE_RPM",					"Engine RPM",								FrameDB::RPM}},
+	{VIN,						{"JK_VIN",							"Vehicle Identification Number",		FrameDB::STRING}},
 	};
 
 
 Wranger2010::Wranger2010(){
-	
+	reset();
+}
+
+void Wranger2010::reset(){
+	_VIN.clear();
 }
 
 void Wranger2010::registerSchema(FrameDB* db){
@@ -137,7 +143,7 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
  	 		}
 			break;
 
-		case 0x20B:
+		case 0x20B:		//"Key Position"
 		{
 			string value;
 			uint8_t pos =  frame.data[0];
@@ -172,7 +178,7 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		}
 			break;
 			
-		case 0x214:
+		case 0x214:	//Distance
 		{
 			uint32_t dist = 	(frame.data[0] << 16  | frame.data[1] <<8  | frame.data[2] );
 			if(dist != 0xffffff)
@@ -180,21 +186,21 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		}
 			break;
 
-		case 0x21B:
+		case 0x21B:	//Fuel level
 		{
 			float level = 	( frame.data[5] / 160.0 );
 			db->updateValue(schemaKeyForValueKey(FUEL_LEVEL), to_string(level), when, eTag);
 		}
 			break;
 
-		case 0x244:
+		case 0x244: //Door Status
 		{
 			int doors = 	 frame.data[0] ;
 			db->updateValue(schemaKeyForValueKey(DOORS), to_string(doors), when, eTag);
 		}
 			break;
 
-		case 0x2CE:
+		case 0x2CE: // RPM
 		{
 			uint16_t xx = (frame.data[0] <<8 | frame.data[1]);
 			if (xx != 0xFFFF){
@@ -204,7 +210,7 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		}
 			break;
 			
-		case 0x3E6:
+		case 0x3E6: //Clock Time Display
 		{
 			char str[10];
 			sprintf (str, "%d:%02d:%02d", frame.data[0], frame.data[1],frame.data[2]);\
@@ -212,6 +218,44 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		}
 			break;
 
+		case 0x219: // JK VIN number
+		{
+			// this repeats with first byte as sequence number
+			// --  once we get it stop updating
+
+			static int stage = 0;
+			
+			if(_VIN.empty()) stage = 0;
+			
+			if (stage == 3) break;
+			uint8_t b0 = frame.data[0];
+			
+			switch (stage) {
+				case 0:
+					if(b0 == 0){
+						_VIN.append((char *)&frame.data[1], 7);
+						stage++;
+				}
+					break;
+					
+				case 1:
+					if(b0 == 1){
+						_VIN.append((char *)&frame.data[1], 7);
+						stage++;
+				}
+					break;
+					
+				case 2:
+					if(b0 == 2){
+						_VIN.append((char *)&frame.data[1], 7);
+						db->updateValue(schemaKeyForValueKey(VIN), _VIN, when, eTag);
+						stage++;
+				}
+					break;
+
+			}
+		}
+			break;
 			
 		default:
 		  break;

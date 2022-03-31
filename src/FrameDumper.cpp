@@ -66,7 +66,8 @@ std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8> changed) {
 
 FrameDumper::FrameDumper(){
 	_ifName = "";
-	_running = true;
+	_running = false;
+	_didStop = false;
 	_lastValueLine = 0;
 	_lastFrameLine = 0;
 	_frameLineMap.clear();
@@ -75,25 +76,27 @@ FrameDumper::FrameDumper(){
 	_showValues	= false;
 	_topOffset = 3;
 	
-	_thread = std::thread(&FrameDumper::run, this);
 
 }
 FrameDumper::~FrameDumper(){
 	stop();
 	
-	_running = false;
 	 
- if (_thread.joinable())
-		_thread.join();
+// if (_thread.joinable())
+//		_thread.join();
 
 }
 
 void FrameDumper::start(string ifName){
 	
-	// clear screen
-	printf("\x1b[2J");
-	printf("\x1b[0;0H\x1b[?25l");
-
+	// stop if in progress/
+	
+	stop();
+	
+	FrameDB* frameDB = FrameDB::shared();
+	frameDB->clearValues();
+	frameDB->clearFrames();
+ 
 	_lastValueLine = 0;
 	_lastFrameLine = 0;
 	_frameLineMap.clear();
@@ -101,29 +104,26 @@ void FrameDumper::start(string ifName){
 	_showFrames = true;
 	_lastEtag = 0;
 	_ifName = ifName;
-	_idle = false;
-	
-//	FrameDB::shared()->cntr = 0;
-	
+		
+	_running = true;
+	_didStop = false;
+	_thread = std::thread(&FrameDumper::run, this);
+	_thread.detach();
 }
 
 void FrameDumper::stop(){
-	_ifName = "";
-	_showFrames = false;
-
-	while(!_idle) {
-		usleep(100);
-	}
- 	printf("\x1b[?25h");
 	
-	printf("\x1b[%d;0H", _lastValueLine + 3);
-
+	if(_running) {
+		_running = false;
 	 
-
-	
-//	FrameDB::shared()->dumpValues();
-	fflush(stdout);
-	
+		// wait for it..
+		while(!_didStop) usleep(100);
+		
+		_ifName = "";
+ 		printf("\x1b[?25h");
+		printf("\x1b[%d;0H ", _lastValueLine + 3);
+		fflush(stdout);
+	}
 }
 
 static float to_farenheit( float in){
@@ -285,23 +285,34 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 	}
 }
 
-void FrameDumper::printChangedFrames(string ifName){
-	
- 	eTag_t newEtag = 0;
+void FrameDumper::printHeaderLine(){
 	
 	FrameDB* frameDB = FrameDB::shared();
-	time_t now = time(NULL);
-	
-	auto new_tags = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &newEtag);
-	auto old_tags = frameDB->framesOlderthan(ifName, now - 5);
 	auto allKeys = frameDB->allValueKeys();
 
 	printf("\x1b[%d;0H\x1b[2K", 0);
 	printf("\x1b[2K can-ids:%d  values:%d",
 			 _lastFrameLine, (int) allKeys.size() );
- 
+
+}
+
+void FrameDumper::printChangedFrames(string ifName, bool redraw){
+	
+ 	eTag_t newEtag = 0;
 	bool addedLines = false;
+
+	FrameDB* frameDB = FrameDB::shared();
+	time_t now = time(NULL);
+	
+	auto new_tags = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &newEtag);
+	auto old_tags = frameDB->framesOlderthan(ifName, now - 5);
  
+	if(redraw) {
+		new_tags = frameDB->allFrames(ifName);
+		addedLines = true;
+		newEtag = _lastEtag;
+	}
+
 	for(auto tag : new_tags){
 		frame_entry frame;
 		bool isOldFrame = find(old_tags.begin(), old_tags.end(), tag) != old_tags.end();
@@ -343,25 +354,24 @@ void FrameDumper::printChangedFrames(string ifName){
 		printf("\x1b[%d;0H\x1b[0K", _lastFrameLine + _topOffset);
 	}
 		
-	printChangedValues(_lastFrameLine + _topOffset,  addedLines );
-
+	printChangedValues(_lastFrameLine + _topOffset,  redraw || addedLines );
+	printHeaderLine();
+	
 	_lastEtag = newEtag;
 	
 }
 
 void FrameDumper::run() {
-		
+	
+	// clear screen
+	printf("\x1b[0;0H\x1b[J\x1b[?25l");
+
 	while(_running){
-
-	// cache this each time , it could change async
-		string ifName = _ifName;
-
-		if(_showFrames){
-			printChangedFrames(_ifName);
-		}
-		
+		printChangedFrames(_ifName);
 		usleep(500);
-		
-		_idle = !_showFrames;
-	}
+		}
+	
+	printChangedFrames(_ifName, true);
+	
+	_didStop = true;
 }

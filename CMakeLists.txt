@@ -10,7 +10,6 @@ set(SOURCES
 	src/main.cpp
 	src/CanBusMgr.cpp
 	src/CmdLineBuffer.cpp
-	src/CmdLineHelp.cpp
 	src/CmdLineMgr.cpp
 	src/CmdLineRegistry.cpp
 	src/FrameDB.cpp

@@ -121,8 +121,14 @@ void CmdLineBuffer::processChar(uint8_t ch){
 	
 //	printf("%c - %02X\n", ch > CHAR_PRINTABLE?ch:' ', ch);
 	
+	
 	if(ch == CHAR_CNTL_C){
 		_clMgr->quit();
+		return;
+	}
+
+	if(ch == CHAR_CNTL_X){
+		_clMgr->interrupt();
 		return;
 	}
 	
@@ -178,9 +184,6 @@ void CmdLineBuffer::processChar(uint8_t ch){
 				
 			}else if(ch == CHAR_CR  ) {
 				processBuffer();
-			}
-			else if(ch == CHAR_QUESTION  ) {
-				handleHelp();
 			}
 			else if(ch > CHAR_PRINTABLE){
 				maybeCopyHistoryToBuffer();
@@ -366,33 +369,6 @@ void CmdLineBuffer::processBuffer(){
 	}
 }
 
-// MARK: - help
-
-
-void CmdLineBuffer::handleHelp(){
-// 
-//	std::vector<std::string> options;
-//
-//  options = _clMgr->matchesForCmd(string((char*)_dbuf.data, _dbuf.used));
-//
-//	if(options.size() > 1) {
-//		
-//	}
-		
-  removeCompletions();
-  
-  string cmdString((char*)_dbuf.data, _dbuf.used);
-  cmdString = Utils::trimEnd(cmdString);
-  cmdString = Utils::trimStart(cmdString);
-  
-  clear();  // clear the buffer
-  
-  // pass it back to the CmdLineMgr
-  _clMgr->helpForCommandLine(cmdString, [=](bool didSucceed){
-	  sendReply(STR_PROMPT);
-	  
-  });
-}
 
 
 // MARK: - wrapper to CmdLineMgr

@@ -48,7 +48,6 @@ public:
 
 	cmdHandler_t handlerForCmd( const string cmd);
 
-	string helpForCmd( stringvector params);
 	
 protected:
 

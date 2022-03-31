@@ -8,7 +8,6 @@
 #include "CanBusMgr.hpp"
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <cassert>
 
 #include "GMLAN.hpp"
@@ -44,7 +43,7 @@ CANBusMgr::CANBusMgr(){
 	FD_ZERO(&_master_fds);
 	_max_fds = 0;
 	
-	_thread = std::thread(&CANBusMgr::run, this);
+	_thread = std::thread(&CANBusMgr::CANThread, this);
 
 }
 
@@ -54,12 +53,11 @@ CANBusMgr::~CANBusMgr(){
 	
 	FD_ZERO(&_master_fds);
 	_max_fds = 0;
-	
 	_running = false;
-	 
+	_reading = false;
+	
  if (_thread.joinable())
 		_thread.join();
-
 }
 
 bool CANBusMgr::registerHandler(string ifName) {
@@ -163,33 +161,16 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 }
 
 
-
-bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
+void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) {
 	
-	
-	std::ifstream	ifs;
-	bool 				statusOk = false;
-	
+//	std::ifstream	ifs;
+	FrameDB* frameDB = FrameDB::shared();
+	uint32_t number = 0;
+	string line;
 	struct timeval start_tv = {0,0};
 	
-	FrameDB* frameDB = FrameDB::shared();
- 
-	frameDB->clearFrames();
-	if(filePath.empty())
-			return false;
- 
-	uint32_t number = 0;
 	try{
-		string line;
-	
-		// open the file
-		ifs.open(filePath, ios::in);
-		if(!ifs.is_open()) {
-			if(errorOut) *errorOut = errno;
-			return false;
-		}
-		
-		while ( std::getline(ifs, line) ) {
+		while (_reading && std::getline(*ifs, line) ) {
 			
 			number++;
 			
@@ -220,7 +201,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 			frame.can_dlc = 0;
 			while(*p) {
 				uint8_t b1;
-		
+				
 				if(sscanf(p, "%02hhx", &b1) != 1){
 					failed = true;
 					break;
@@ -238,14 +219,58 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 				usleep(500);
 			}
 		}
- 
-		statusOk = true;
-		ifs.close();
-		
-		usleep(500);
 	}
 	catch(std::ifstream::failure &err) {
+	//	printf("readFramesFromFile FAIL: %s", err.what());
+ 	}
+	_reading = false;
+	ifs->close();
+	delete ifs;
 		
+	if(doneCallBack) doneCallBack();
+	
+}
+	
+
+
+bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut, voidCallback_t doneCallBack){
+	
+	
+	// are we already reading a file abort then,
+	if(_reading){
+		if(errorOut) *errorOut = EBUSY;
+		return false;
+	}
+	
+	if(filePath.empty())
+		return false;
+	
+	// start fresh frames
+	FrameDB* frameDB = FrameDB::shared();
+	frameDB->clearFrames();
+	
+	bool	statusOk = false;
+	try{
+		string line;
+		std::ifstream	*ifs  = new ifstream;
+ 
+		// open the file
+		ifs->open(filePath, ios::in);
+		if(!ifs->is_open()) {
+			delete ifs;
+			if(errorOut) *errorOut = errno;
+			return false;
+		}
+		
+		// start thread
+		_reading = true;
+		_thread1 = std::thread(&CANBusMgr::readFileThread,  this, ifs, doneCallBack);
+ 		_thread1.detach();
+ 
+		statusOk = true;
+	}
+	
+	catch(std::ifstream::failure &err) {
 		printf("readFramesFromFile FAIL: %s", err.what());
 		statusOk = false;
 	}
@@ -254,8 +279,7 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut){
 }
 
 
-
-void CANBusMgr::run() {
+void CANBusMgr::CANThread() {
 	
 	FrameDB* frameDB = FrameDB::shared();
 	struct can_frame frame;

@@ -23,12 +23,12 @@ class  CmdLineBufferManager {
  
 public:
 	virtual ~CmdLineBufferManager() {};
-	virtual void quit() = 0;
-	
+	virtual void interrupt()  = 0;
+	virtual void quit()  = 0;
+
 	virtual void sendReply(const std::string) = 0;
 	virtual bool processCommandLine(std::string cmdLine, boolCallback_t completion) = 0;
 	virtual stringvector matchesForCmd(const std::string cmd) = 0;
-	virtual void helpForCommandLine(std::string cmdLine, boolCallback_t cb) = 0;
 };
 
  class CmdLineBuffer {
@@ -76,9 +76,10 @@ public:
 	static const uint8_t CHAR_TAB       = 0x09;
 	static const uint8_t CHAR_DEL       = 0x7F;
 	static const uint8_t CHAR_ESC     	 = 0x1B;
-	static const uint8_t CHAR_QUESTION   = '?';
+//	static const uint8_t CHAR_QUESTION   = '?';
 
 	static const uint8_t CHAR_CNTL_C     	 = 0x03;		// Quit
+	static const uint8_t CHAR_CNTL_X     	 = 0x18;		// Interrupt
 
 	static const uint8_t CHAR_CNTL_A     	 = 0x01;		// begining of line
 	static const uint8_t CHAR_CNTL_E     	 = 0x05;		// end of line
@@ -112,8 +113,7 @@ public:
 	void handleBeginingOfLine();
 	void handleEndOfLine();
 	void handleClearToEndOfLine();
-	void handleHelp();
-
+	
 	void displayHistoryLine();
 
 	void displayCompletions();

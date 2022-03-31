@@ -137,6 +137,12 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 
 
 GMLAN::GMLAN(){
+	reset();
+}
+
+
+void GMLAN::reset(){
+	
 }
 
  

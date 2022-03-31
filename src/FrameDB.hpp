@@ -60,6 +60,7 @@ class FrameDB {
 	void saveFrame(string ifName, can_frame_t frame, long timeStamp);
 	void clearFrames(string ifName = "");
 	
+	vector<frameTag_t> 	allFrames(string ifName);
 	vector<frameTag_t>  	framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *newEtag);
 	vector<frameTag_t>  	framesOlderthan(string ifName, time_t time);
 	bool 						frameWithTag(frameTag_t tag, frame_entry *frame);
@@ -149,9 +150,7 @@ private:
 
 	map<string_view, valueSchema_t>			_schema;
 	map<string_view, value_t> _values;
- 
-	
- };
+  };
 
 
 

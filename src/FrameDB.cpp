@@ -117,7 +117,12 @@ vector<CanProtocol*>	FrameDB::protocolsForTag(frameTag_t tag){
 
 void FrameDB::clearFrames(string ifName){
 	
-	// close all?
+	for (auto& [key, entry]  : _interfaces)
+		for(auto proto : entry.protocols){
+			proto->reset();
+	}
+
+	
 	if(ifName.empty()){
 		for (auto& [key, entry]  : _interfaces){
 			entry.frames.clear();
@@ -245,7 +250,7 @@ vector<frameTag_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eT
 			auto theFrames = &info->frames;
 			
 			for (const auto& [canid, frame] : *theFrames) {
-				if(frame.eTag <= eTag){
+				if(frame.eTag < eTag){
 					tags.push_back(makeFrameTag(info->ifTag, canid));
 				}
 			}
@@ -255,6 +260,26 @@ vector<frameTag_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eT
 		*eTagOut = _lastEtag;
 	
 	return tags;
+}
+
+
+vector<frameTag_t> 	FrameDB::allFrames(string ifName){
+	vector<frameTag_t> tags = {};
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	for (const auto& [name ,_ ] : _interfaces)
+		if(ifName.empty() || ifName == name ) {
+			auto info = &_interfaces[name];
+			
+			auto theFrames = &info->frames;
+			
+			for (const auto& [canid, frame] : *theFrames) {
+				tags.push_back(makeFrameTag(info->ifTag, canid));
+	 		}
+		}
+	
+	return tags;
+
 }
 
 vector<frameTag_t>  	FrameDB::framesOlderthan(string ifName, time_t time){
@@ -358,7 +383,7 @@ vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag)
 	vector<string_view> keys = {};
 	
 	for (const auto& [key, value] : _values) {
-		if(value.eTag <= eTag)
+		if(value.eTag < eTag)
 			keys.push_back(key);
 	}
 

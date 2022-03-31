@@ -22,28 +22,29 @@ public:
 	FrameDumper();
 	~FrameDumper();
 	
-	void start(string ifName);
+	void start(string ifName = string());
 	void stop();
 
  
 private:
 	void run();
 
-	void printChangedFrames(string ifName);
-	void printChangedValues(int lastLine, bool redraw);
+	void printChangedFrames(string ifName, bool redraw = false);
+	void printChangedValues(int lastLine, bool redraw = false);
+	void printHeaderLine();
 	
 	std::thread  	_thread;		 //Internal thread, this is in order to start and stop the thread from
 	bool 				_running;	 //Flag for starting and terminating the main loop
+	bool 				_didStop;		// when loop is done
 	string 			_ifName;
-	
-	bool 				_idle;
+
 	
 	bool				_showFrames;
 	bool 				_showValues;
 	
 	eTag_t 			_lastEtag;
 
-	int 					_topOffset;
+	int 				_topOffset;
 	
 	map<frameTag_t, int> _frameLineMap;
 	int _lastFrameLine;

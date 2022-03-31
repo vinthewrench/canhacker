@@ -140,39 +140,33 @@ static bool READCmdHandler( stringvector line,
 		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a filename.";
 	}
 	else {
-		string ifName = "";
-//		if( fileName.find("jeep") != string::npos)
-//			ifName = "can0";
-//		else if( fileName.find("chevy") != string::npos)
-//			ifName = "can1";
-//		else if( fileName.find("t0") != string::npos)
-//			ifName = "can1";
-//		else if( fileName.find("vin") != string::npos)
-//			ifName = "can1";
-
 		FrameDB::shared()->clearFrames();
 		FrameDB::shared()->clearValues();
-	
+		
 		(cb)(true);
 		
-	 	dumper.start(ifName);
-		if( canBus->readFramesFromFile(fileName, &errnum)) {
-			
- 			dumper.stop();
-			mgr->sendReply( "OK");
+		dumper.start();
+		bool success =  canBus->readFramesFromFile(fileName, &errnum,
+																 [=] () {
+			// callback when done.
+			dumper.stop();
+			mgr->sendReply( "\r\n");
 			(cb)(true);
-			
+			fflush(stdout);
+			});
+		
+		if(success){
 			return true;
 		}
 		else {
 			errorStr = "Failed to read from \x1B[36;1;4m"
 			+ fileName + "\x1B[0m, " + string(strerror(errnum)) + " \r\n";
+			mgr->sendReply(errorStr);
+			(cb)(false);
+			
 			
 		}
 	}
-	
-	mgr->sendReply(errorStr);
-	(cb)(false);
 	return false;
 }
 
@@ -186,9 +180,7 @@ void registerCommandsLineFunctions() {
 	
 	cmlR->registerCommand("sniff" ,	SNIFFCmdHandler);
 	cmlR->registerCommand("stop" ,	STOPCmdHandler);
-
 	cmlR->registerCommand("read" ,	READCmdHandler);
-
 	cmlR->registerCommand("clear", [=] (stringvector line,
 													 CmdLineMgr* mgr,
 													 boolCallback_t cb ){
@@ -253,18 +245,26 @@ int main(int argc, const char * argv[]) {
 		//		printf("col : %d, rows: %hu \n\r",ws.ws_col,ws.ws_row);
 		//		}
 		
-		cmdLineMgr.start();
+		cmdLineMgr.start([=](CmdLineMgr* cmd) {
+			
+			CANBusMgr*	canBus = CANBusMgr::shared();
+			canBus->quitReading();
+			
+			dumper.stop();
+	//		printf("Stopped...\r\n");
+			cmd->reset();
+		
+		});
 		
 		while(cmdLineMgr.isRunning()){
 			int c = getchar();
 			cmdLineMgr.processChar(c);
 		}
-		
-		
+	 
 		// Restore previous TTY settings
 		tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_backup);
-			
-		
+		dumper.stop();
+	
 	}
 	catch ( const CanMgrException& e)  {
 		printf("\tError %d %s\n\n", e.getErrorNumber(), e.what());

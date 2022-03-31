@@ -18,28 +18,33 @@
 #include "CmdLineBuffer.hpp"
 using namespace std;
 
+class CmdLineMgr;
+
+typedef std::function<void(CmdLineMgr *)> cmdLineMgrCallback_t;
+
 class CmdLineMgr:  public CmdLineBufferManager {
 
 public:
 	CmdLineMgr();
 	~CmdLineMgr();
 
+	void reset();
+	
 	void clear();
-	void start();
+	void start(cmdLineMgrCallback_t interruptCallback = NULL);
 	void stop();
 	bool isRunning() {return _isRunning;};
 	
 	void processChar(uint8_t c);
-
 	void processChars(uint8_t* data, size_t len);
 
 
 	// calls from CmdLineBufferManager
 	virtual bool processCommandLine(std::string cmdLine, boolCallback_t cb);
 	virtual stringvector matchesForCmd(const std::string cmd);
-	virtual void helpForCommandLine(std::string cmdLine, boolCallback_t cb);
+	virtual void interrupt();
 	virtual void quit() { stop(); };
-		
+	
 	void sendReply(std::string reply);
 	
 
@@ -50,9 +55,8 @@ public:
 private:
 
 	void registerBuiltInCommands();
-	// built in commands
- 	void doHelp(stringvector params);
-	
+	 
  	CmdLineBuffer 		_cmdLineBuffer;
 	bool 					_isRunning;
+	cmdLineMgrCallback_t 	_interruptCallback;
 };

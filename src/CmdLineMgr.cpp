@@ -18,8 +18,9 @@ CmdLineMgr::~CmdLineMgr(){
 	
 }
 
-void CmdLineMgr::start(){
+void CmdLineMgr::start(cmdLineMgrCallback_t cb){
 	registerBuiltInCommands();
+	_interruptCallback = cb;
 	_cmdLineBuffer.didConnect();
 	_isRunning = true;
 }
@@ -31,10 +32,27 @@ void CmdLineMgr::stop(){
  }
 
 
+// CHAR_CNTL_C was typed
+void CmdLineMgr::interrupt(){
+	if(_interruptCallback) {
+		_interruptCallback(this);
+	}
+	else {
+		stop();
+	}
+	
+}
+
 
 void  CmdLineMgr::clear(){
 	_cmdLineBuffer.clear();
 }
+
+
+void CmdLineMgr::reset(){
+	_cmdLineBuffer.handleClearLine();
+}
+
 
 void CmdLineMgr::processChar(uint8_t c){
 	_cmdLineBuffer.processChars(&c, 1);
@@ -86,20 +104,6 @@ bool CmdLineMgr::processCommandLine(std::string cmdLine, boolCallback_t completi
 }
 
 
-void CmdLineMgr::helpForCommandLine(std::string cmdLine, boolCallback_t completion){
-	
-//	if(!_server->isConnected())
-//		return;
-//
-	vector<string> v = split<string>(cmdLine, " ");
-
-	doHelp(v);
-	
-	clear();
-	completion(true);
- 
-}
-
 
 void CmdLineMgr::registerBuiltInCommands(){
 	
@@ -114,14 +118,6 @@ void CmdLineMgr::registerBuiltInCommands(){
 		return false;
 	});
 	
-
-	reg->registerCommand("help", [=](stringvector line,
-												CmdLineMgr* mgr,
-												boolCallback_t cb){
-		mgr->doHelp(line);
-		(cb) (true);
-		return false;
-	});
 
 	reg->registerCommand("bye", [=](stringvector line,
 											  CmdLineMgr* mgr,
@@ -172,18 +168,6 @@ void CmdLineMgr::waitForChar( std::vector<char> chs,
 // MARK: - built in commands
  
 
- 
-void CmdLineMgr::doHelp(stringvector params){
- 
-	CmdLineRegistry* reg = CmdLineRegistry::shared();
-
-	auto helpStr = reg->helpForCmd(params);
-
-	sendReply(helpStr);
-}
-
-
- 
 void CmdLineMgr::sendReply(std::string str){
 	printf("%s", str.c_str());
 }
