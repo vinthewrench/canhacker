@@ -91,6 +91,10 @@ bool CANBusMgr::start(string ifName,int *errorOut){
 				_interfaces[ifName] = fd;
  				return fd == -1?false:true;
 			}
+			else {
+				// already open
+				return true;
+			}
 		}
 	}
 	
