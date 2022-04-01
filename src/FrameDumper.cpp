@@ -270,7 +270,7 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
  
 	if(redraw){
 		printf("\x1b[%d;0H\x1b[0J", lastLine );// erase till end of line
-		// redarw all values
+		// redraw all values
 		_valueLineMap.clear();
 		_lastValueLine = lastLine + offset;
 		

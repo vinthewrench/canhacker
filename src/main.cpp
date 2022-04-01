@@ -29,6 +29,7 @@
 
 #include <execinfo.h>
 #include <cassert>
+#include <regex>
 
 using namespace std;
 
@@ -83,6 +84,85 @@ static bool STOPCmdHandler( stringvector line,
 	return false;
 };
 
+static bool OBDCmdHandler( stringvector 		line,
+								  CmdLineMgr* 		mgr,
+								  boolCallback_t 	cb){
+	string errorStr;
+	string command = line[0];
+	string cmdStr;
+	string portStr;
+	string canStr;
+	CANBusMgr*	canBus = CANBusMgr::shared();
+
+	if(line.size() > 1)
+		portStr = line[1];
+	
+	if(line.size() > 2)
+		cmdStr = line[2];
+	
+	if(line.size() > 3){
+		canStr = line[2];
+		cmdStr = line[3];
+	}
+	
+	std::transform(portStr.begin(), portStr.end(), portStr.begin(), ::tolower);
+	std::transform(cmdStr.begin(), cmdStr.end(), cmdStr.begin(), ::tolower);
+ 
+	if(portStr.empty() || cmdStr.empty() ) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a CAN interface and command. \r\n";
+	}
+	else {
+		canid_t can_id = 0x7DF;	// brodcast OBD
+		int  errnum = 0;
+		bool success = false;
+		
+		if(!canStr.empty()) {
+			if( ! regex_match(canStr, std::regex("^[A-Fa-f0-9]{3}"))
+				||  !( std::sscanf(canStr.c_str(), "%x", &can_id) == 1)){
+				errorStr =  "\x1B[36;1;4m"  + canStr + "\x1B[0m is not a valid a CAN ID. \r\n";
+				goto done;
+			}
+		}
+		
+		if(cmdStr == "vin"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+		else if(cmdStr == "pids1"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+		else if(cmdStr == "pids2"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+		else if(cmdStr == "pids3"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+		else if(cmdStr == "volts"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x00, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+
+		else {
+			errorStr =  "Command: \x1B[36;1;4m"  + cmdStr + "\x1B[0m is not valid \r\n";
+			goto done;
+		}
+		
+		if(success){
+			mgr->sendReply( "OK");
+			(cb)(true);
+			
+			return true;
+		}
+		
+		errorStr = "Failed to write  to \x1B[36;1;4m" + portStr + "\x1B[0m, Error: " + string(strerror(errnum)) + " \r\n";
+	}
+	
+done:
+	mgr->sendReply(errorStr);
+	(cb)(false);
+	return false;
+	
+}
+
+ 
 static bool MODECmdHandler( stringvector 		line,
 								  CmdLineMgr* 		mgr,
 								  boolCallback_t 	cb){
@@ -210,8 +290,6 @@ static bool READCmdHandler( stringvector line,
 	return false;
 }
 
- 
-
 
 void registerCommandsLineFunctions() {
 	
@@ -222,7 +300,8 @@ void registerCommandsLineFunctions() {
 	cmlR->registerCommand("sniff" ,	SNIFFCmdHandler);
 	cmlR->registerCommand("stop" ,	STOPCmdHandler);
 	cmlR->registerCommand("read" ,	READCmdHandler);
-	
+	cmlR->registerCommand("OBD" ,		OBDCmdHandler);
+
 	cmlR->registerCommand("clear", [=] (stringvector line,
 													 CmdLineMgr* mgr,
 													 boolCallback_t cb ){

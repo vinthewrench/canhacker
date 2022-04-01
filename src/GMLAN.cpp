@@ -101,7 +101,8 @@ typedef  enum  {
 		FUEL_CONSUMPTION,
 		THROTTLE_POS,
 		FAN_SPEED,
-		LIFE_OIL,
+		OLF,
+		OLF_RESET,
 		TEMP_COOLANT,
 		TEMP_TRANSMISSION,
 		PRESSURE_OIL,
@@ -136,7 +137,8 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{TRANS_GEAR,			{"GM_TRANS_GEAR",			"Current Gear",							FrameDB::STRING}},
 	{ENGINE_TORQUE,		{"GM_ENGINE_TORQUE",		"Engine Torque Actual",					FrameDB::NM}},
 	{TEMP_OIL,				{"GM_OIL_TEMP",			"Engine Oil Temperature",				FrameDB::DEGREES_C}},
-	{LIFE_OIL,				{"GM_OIL_LIFE",			"Engine Oil Remaining Life",			FrameDB::PERCENT}},
+	{OLF,						{"GM_OLF",					"Engine Oil Remaining Life",			FrameDB::PERCENT}},
+	{OLF_RESET,				{"GM_OLF_RESET",			"RESET Oil Life Performed",			FrameDB::BOOL}},
 	};
 
 
@@ -284,6 +286,8 @@ void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when,
 	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
 	db->updateValue(schemaKeyForValueKey(FUEL_CONSUMPTION), to_string(ifc),when, eTag);
 	
+	bool olf_reset =  frame.data[4] & 0x10;
+	db->updateValue(schemaKeyForValueKey(OLF_RESET), to_string(olf_reset),when, eTag);
 };
 
 void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
@@ -292,7 +296,7 @@ void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when,
 	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string(fan),when, eTag);
 
 	float oilLife = frame.data[6] / 255.0;
-	db->updateValue(schemaKeyForValueKey(LIFE_OIL), to_string(oilLife),when, eTag);
+	db->updateValue(schemaKeyForValueKey(OLF), to_string(oilLife),when, eTag);
 
 	
 };

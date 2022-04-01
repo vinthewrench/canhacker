@@ -160,6 +160,44 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 	return false;
 }
 
+bool CANBusMgr::sendFrame(string ifName, canid_t can_id, vector<uint8_t> bytes,  int *errorOut){
+
+	int error = EBADF;
+	 
+	if (bytes.size() < 1 || bytes.size() > 8) {
+		error = EMSGSIZE;
+ 	}
+	else if (can_id > 0 )  {
+		error = EBADF;
+	}
+	else if(!ifName.empty()){
+		for (auto& [key, fd]  : _interfaces){
+			if (strcasecmp(key.c_str(), ifName.c_str()) == 0){
+				if(fd != -1){
+						// create packet
+	 
+					struct can_frame frame;
+					memset(&frame, 0, sizeof frame);
+					
+					frame.can_id = can_id;
+					for(int i = 0; i < bytes.size();  i++)
+						frame.data[i]  = bytes[i];
+					frame.can_dlc = bytes.size();
+					
+					if( write(fd, &frame, CAN_MTU) == CAN_MTU) return true;
+					
+					error  = errno;
+				}
+				break;
+			}
+		}
+	}
+	
+done:
+	if(errorOut) *errorOut = error;
+	return false;
+}
+
 
 void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) {
 	

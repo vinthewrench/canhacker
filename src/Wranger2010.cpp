@@ -86,6 +86,7 @@ typedef  enum  {
 		KEY_POSITION,
 		FUEL_LEVEL,
 		DOORS,
+		DOORS_LOCK,
 		CLOCK,
 		RPM,
 		VIN,
@@ -96,9 +97,10 @@ typedef FrameDB::valueSchema_t valueSchema_t;
 static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{STEERING_ANGLE,		{"JK_STEERING_ANGLE",			"Steering Angle",							FrameDB::DEGREES}},
 	{VEHICLE_DISTANCE,	{"JK_VEHICLE_DISTANCE",			"Vehicle Distance Driven",				FrameDB::KM}},
-	{KEY_POSITION,			{"JK_KEY_POSITION",				"Ignition Key Position",							FrameDB::STRING}},
+	{KEY_POSITION,			{"JK_KEY_POSITION",				"Ignition Key Position",				FrameDB::STRING}},
 	{FUEL_LEVEL,			{"JK_FUEL_LEVEL",					"Fuel Level",								FrameDB::PERCENT}},
 	{DOORS,					{"JK_DOORS",						"Door State",								FrameDB::BINARY}},
+	{DOORS_LOCK,			{"JK_DOORS_LOCKED",				"Door Lock",								FrameDB::BOOL}},
 	{CLOCK,					{"JK_CLOCK",						"Clock Time",								FrameDB::STRING}},
 	{RPM,						{"JK_ENGINE_RPM",					"Engine RPM",								FrameDB::RPM}},
 	{VIN,						{"JK_VIN",							"Vehicle Identification Number",		FrameDB::STRING}},
@@ -197,6 +199,13 @@ void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag
 		{
 			int doors = 	 frame.data[0] ;
 			db->updateValue(schemaKeyForValueKey(DOORS), to_string(doors), when, eTag);
+			
+			int locks = 	 frame.data[4] ;
+			if(locks & 0x80)
+				db->updateValue(schemaKeyForValueKey(DOORS_LOCK), to_string(false), when, eTag);
+			else if(locks & 0x08)
+				db->updateValue(schemaKeyForValueKey(DOORS_LOCK),  to_string(true), when, eTag);
+			
 		}
 			break;
 

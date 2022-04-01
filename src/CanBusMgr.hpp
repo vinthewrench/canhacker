@@ -50,6 +50,8 @@ public:
 	bool readFramesFromFile(string filePath, int *error = NULL,  voidCallback_t doneCallBack = NULL );
 	void quitReading() {_reading = false;};
 	
+	bool sendFrame(string ifName, canid_t can_id, vector<uint8_t> bytes,  int *error = NULL);
+	
 private:
 	
 
