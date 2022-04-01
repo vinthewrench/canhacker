@@ -19,11 +19,22 @@ class FrameDumper {
 	
 public:
 
+	
+	typedef  enum  {
+		 NONE,
+		 VALUES,
+		 FRAMES,
+		 BOTH,
+		 } dump_mode_t;
+
 	FrameDumper();
 	~FrameDumper();
 	
 	void start(string ifName = string());
 	void stop();
+	
+	void setDumpMode(dump_mode_t mode);
+	dump_mode_t getDumpMode(){ return _mode;};
 
  
 private:
@@ -38,10 +49,11 @@ private:
 	bool 				_didStop;		// when loop is done
 	string 			_ifName;
 
-	
-	bool				_showFrames;
-	bool 				_showValues;
-	
+	mutable std::mutex _mutex;
+
+	dump_mode_t		_mode;
+	dump_mode_t 	_lastmode;
+
 	eTag_t 			_lastEtag;
 
 	int 				_topOffset;

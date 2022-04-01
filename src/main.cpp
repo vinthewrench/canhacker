@@ -83,6 +83,46 @@ static bool STOPCmdHandler( stringvector line,
 	return false;
 };
 
+static bool MODECmdHandler( stringvector 		line,
+								  CmdLineMgr* 		mgr,
+								  boolCallback_t 	cb){
+	string errorStr;
+	string command = line[0];
+	string modeStr;
+
+	if(line.size() > 1)
+		modeStr = line[1];
+
+	if(modeStr.empty()) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a mode (FRAMES, VALUES, BOTH). \r\n";
+	}
+	else {
+		FrameDumper::dump_mode_t mode = FrameDumper::NONE;
+		
+		if( modeStr =="both")
+			mode = FrameDumper::BOTH;
+		else if( modeStr =="values")
+			mode = FrameDumper::VALUES;
+		else if( modeStr =="frames")
+			mode = FrameDumper::FRAMES;
+	else
+		errorStr =  "\x1B[36;1;4m"  + modeStr + "\x1B[0m is not a valid mode (FRAMES, VALUES, BOTH). \r\n";
+
+		if(mode != FrameDumper::NONE){
+			dumper.setDumpMode(mode);
+			mgr->sendReply( "OK");
+			(cb)(true);
+
+			return true;
+		}
+	}
+ 
+	mgr->sendReply(errorStr);
+	(cb)(false);
+	return false;
+
+}
+
 static bool SNIFFCmdHandler( stringvector line,
 										CmdLineMgr* mgr,
 										boolCallback_t	cb){
@@ -96,7 +136,7 @@ static bool SNIFFCmdHandler( stringvector line,
 
 
 	if(portStr.empty()) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a CAN interface.";
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a CAN interface. \r\n";
 	}
 	else {
 		
@@ -178,9 +218,11 @@ void registerCommandsLineFunctions() {
 	// register command line commands
 	auto cmlR = CmdLineRegistry::shared();
 	
+	cmlR->registerCommand("mode" ,	MODECmdHandler);
 	cmlR->registerCommand("sniff" ,	SNIFFCmdHandler);
 	cmlR->registerCommand("stop" ,	STOPCmdHandler);
 	cmlR->registerCommand("read" ,	READCmdHandler);
+	
 	cmlR->registerCommand("clear", [=] (stringvector line,
 													 CmdLineMgr* mgr,
 													 boolCallback_t cb ){

@@ -112,8 +112,36 @@ vector<CanProtocol*>	FrameDB::protocolsForTag(frameTag_t tag){
 }
 
 
+FrameDB::valueSchema_t FrameDB::schemaForKey(string_view key){
+	valueSchema_t schema = {"", "", UNKNOWN};
+ 
+	if(_schema.count(key)){
+		schema =  _schema[key];
+	}
+	
+	return schema;
+}
+
+void FrameDB::addSchema(string_view key,  valueSchema_t schema){
+	if( _schema.find(key) == _schema.end())
+		_schema[key] = schema;
+}
+ 
+
+
 // MARK: -  FRAMES
  
+int FrameDB::framesCount(){
+
+	int count = 0;
+	
+	for (auto& [key, entry]  : _interfaces){
+		count += entry.frames.size();
+	}
+
+	return count;
+}
+
 
 void FrameDB::clearFrames(string ifName){
 	
@@ -149,6 +177,8 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 	long avgTime = 0;
 	time_t now = time(NULL);
 	
+	_lastEtag++;
+
 	canid_t can_id = frame.can_id & CAN_ERR_MASK;
 
 	//Error check
@@ -176,22 +206,18 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		// create new frame entry
 		frame_entry entry;
 		entry.frame = frame;
-//		entry.line = (uint) theFrames->size();
 		entry.timeStamp = timeStamp;
 		entry.avgTime = 0;
-		entry.eTag = ++_lastEtag;
+		entry.eTag = _lastEtag;
 		entry.updateTime = now;
 		entry.lastChange.reset();
 		theFrames->insert( std::pair<canid_t,frame_entry>(can_id,entry));
 		isNew = true;
-//		line = entry.line;
 	}
 	else {
 		// can ID is already there
 		auto e = theFrames->find(can_id);
 		auto oldFrame = &e->second.frame;
-		
-//		line = e->second.line;
 		
 		if(frame.can_dlc == oldFrame->can_dlc
 			&& memcmp(frame.data, oldFrame->data, frame.can_dlc ) == 0){
@@ -223,7 +249,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 			long newAvg = ((timeStamp - e->second.timeStamp) + e->second.avgTime) / 2;
 			e->second.timeStamp = timeStamp;
 			e->second.avgTime = newAvg;
-			e->second.eTag = ++_lastEtag;
+			e->second.eTag = _lastEtag;
 			e->second.updateTime = now;
 			e->second.lastChange = changed;
 			avgTime =  newAvg;
@@ -235,6 +261,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 		for(auto proto : *theProtocols ){
 			proto->processFrame(this, frame, now, _lastEtag );
 		};
+	
 }
 
 
@@ -250,7 +277,7 @@ vector<frameTag_t> FrameDB::framesUpdateSinceEtag(string ifName, eTag_t eTag, eT
 			auto theFrames = &info->frames;
 			
 			for (const auto& [canid, frame] : *theFrames) {
-				if(frame.eTag < eTag){
+				if(frame.eTag <= eTag){
 					tags.push_back(makeFrameTag(info->ifTag, canid));
 				}
 			}
@@ -328,30 +355,21 @@ bool FrameDB::frameWithTag(frameTag_t tag, frame_entry *frameOut){
 			}
  		}
 	}
+	
 	return false;
 }
 
-
-FrameDB::valueSchema_t FrameDB::schemaForKey(string_view key){
-	valueSchema_t schema = {"", "", UNKNOWN};
- 
-	if(_schema.count(key)){
-		schema =  _schema[key];
-	}
-	
-	return schema;
-}
+// MARK: -   VALUES
 
 void  FrameDB::clearValues(){
 	_values.clear();
 	_lastEtag = 0;
 }
 
-void FrameDB::addSchema(string_view key,  valueSchema_t schema){
-	if( _schema.find(key) == _schema.end())
-		_schema[key] = schema;
+int FrameDB::valuesCount() {
+	return (int) _values.size();
 }
- 
+
 
 void FrameDB::updateValue(string_view key, string value, time_t when,  eTag_t eTag){
 	
@@ -383,7 +401,7 @@ vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag)
 	vector<string_view> keys = {};
 	
 	for (const auto& [key, value] : _values) {
-		if(value.eTag < eTag)
+		if(value.eTag <= eTag)
 			keys.push_back(key);
 	}
 

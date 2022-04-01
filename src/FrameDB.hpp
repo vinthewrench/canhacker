@@ -54,8 +54,7 @@ class FrameDB {
 	vector<CanProtocol*>	protocolsForTag(frameTag_t tag);
 
 	eTag_t lastEtag() { return  _lastEtag;};
-	
-
+ 
 // Frame database
 	void saveFrame(string ifName, can_frame_t frame, long timeStamp);
 	void clearFrames(string ifName = "");
@@ -64,7 +63,8 @@ class FrameDB {
 	vector<frameTag_t>  	framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *newEtag);
 	vector<frameTag_t>  	framesOlderthan(string ifName, time_t time);
 	bool 						frameWithTag(frameTag_t tag, frame_entry *frame);
-	
+	int						framesCount();
+
 // value Database
 	
 	typedef enum {
@@ -113,7 +113,8 @@ class FrameDB {
 
 	void updateValue(string_view key, string value, time_t when,  eTag_t eTag);
 	void clearValues();
- 
+	int valuesCount();
+
 	vector<string_view> 		allValueKeys();
 	vector<string_view>  	valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag);
 	vector<string_view>  	valuesOlderthan(time_t time);

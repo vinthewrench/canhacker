@@ -72,9 +72,9 @@ FrameDumper::FrameDumper(){
 	_lastFrameLine = 0;
 	_frameLineMap.clear();
 	_valueLineMap.clear();
-	_showFrames = false;
-	_showValues	= false;
 	_topOffset = 3;
+	_mode = BOTH;
+	_lastmode = _mode;
 	
 
 }
@@ -101,7 +101,6 @@ void FrameDumper::start(string ifName){
 	_lastFrameLine = 0;
 	_frameLineMap.clear();
 	_valueLineMap.clear();
-	_showFrames = true;
 	_lastEtag = 0;
 	_ifName = ifName;
 		
@@ -126,12 +125,18 @@ void FrameDumper::stop(){
 	}
 }
 
+void FrameDumper::setDumpMode(dump_mode_t mode){
+	
+	std::lock_guard<std::mutex> lock(_mutex);
+	_mode = mode;
+}
+
 static float to_farenheit( float in){
 		return ((in * 1.8)  + 32.0);
 }
 
 
-static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
+static void printValue(int line, bool isUpdated, bool isOld, string_view key){
 	FrameDB* frameDB = FrameDB::shared();
 	string value = "";
 	
@@ -189,6 +194,14 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 			}
 			break;
 	 
+	
+		  case	FrameDB::LPH:
+		  {
+			  double dist =   stof(value) * 0.26;
+			  p += sprintf(p, "%0.1f g/hr",  dist);
+		  }
+			  break;
+
 			case	FrameDB::KM:
 			{
 				double dist =   stof(value) * 0.621371;
@@ -213,6 +226,14 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 				}
 			}
 				break;
+				
+			case	FrameDB::PERCENT:
+			{
+				float temp = stof(value) * 100.0;
+				p += sprintf(p, "%0.2f%%",  temp);
+			}
+				break;
+
 			default:
 				p += sprintf(p, "%s", value.c_str());
 		}
@@ -238,7 +259,7 @@ static void printFrame(int line, bool isUpdated, bool isOld, string_view key){
 
 void FrameDumper::printChangedValues(int lastLine, bool redraw){
  
-	int offset = 2;
+	int offset = 1;
  
 	FrameDB* frameDB = FrameDB::shared();
 	time_t now = time(NULL);
@@ -260,7 +281,7 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 			bool isOld = std::find(old_keys.begin(), old_keys.end(), key) != old_keys.end();
 			bool isUpdated = std::find(updated_keys.begin(), updated_keys.end(), key) != updated_keys.end();
 		 
-			printFrame(_lastValueLine, isUpdated, isOld, key);
+			printValue(_lastValueLine, isUpdated, isOld, key);
 			_lastValueLine++;
 		}
 	}
@@ -280,86 +301,101 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 			bool isOld = std::find(old_keys.begin(), old_keys.end(), key) != old_keys.end();
 			bool isUpdated = std::find(updated_keys.begin(), updated_keys.end(), key) != updated_keys.end();
 		 
-			printFrame(line, isUpdated, isOld, key);
+			printValue(line, isUpdated, isOld, key);
 			}
 	}
 }
 
 void FrameDumper::printHeaderLine(){
-	
+ 
 	FrameDB* frameDB = FrameDB::shared();
-	auto allKeys = frameDB->allValueKeys();
-
+	 
 	printf("\x1b[%d;0H\x1b[2K", 0);
-	printf("\x1b[2K can-ids:%d  values:%d",
-			 _lastFrameLine, (int) allKeys.size() );
-
+	printf("\x1b[2K\t Totals can-ids:%-3d values:%-3d",
+			 frameDB->framesCount(), frameDB->valuesCount());
 }
 
 void FrameDumper::printChangedFrames(string ifName, bool redraw){
 	
- 	eTag_t newEtag = 0;
-	bool addedLines = false;
+	std::lock_guard<std::mutex> lock(_mutex);
 
+	if(_lastmode != _mode){
+		 redraw = true;
+		_lastmode = _mode;
+		_frameLineMap.clear();
+		_valueLineMap.clear();
+		_lastFrameLine = 0;
+		_lastValueLine = 0;
+				
+		printf("\x1b[0;0H\x1b[J\x1b[?25l");		// clear screen
+	}
+	
+	eTag_t newEtag = 0;
+	bool addedLines = false;
+	
+	if(redraw) {
+		_lastEtag = 0;
+	};
+		
 	FrameDB* frameDB = FrameDB::shared();
 	time_t now = time(NULL);
 	
 	auto new_tags = frameDB->framesUpdateSinceEtag(ifName, _lastEtag, &newEtag);
 	auto old_tags = frameDB->framesOlderthan(ifName, now - 5);
- 
-	if(redraw) {
-		new_tags = frameDB->allFrames(ifName);
-		addedLines = true;
-		newEtag = _lastEtag;
-	}
-
-	for(auto tag : new_tags){
-		frame_entry frame;
-		bool isOldFrame = find(old_tags.begin(), old_tags.end(), tag) != old_tags.end();
-		
-		if( frameDB->frameWithTag(tag, &frame)){
+	
+	if(_mode == BOTH || _mode == FRAMES){
+		for(auto tag : new_tags){
+			frame_entry frame;
+			bool isOldFrame = find(old_tags.begin(), old_tags.end(), tag) != old_tags.end();
 			
-			int line = 0;
-			auto it =  _frameLineMap.find(tag);
-			if(it != _frameLineMap.end()) {
-				line = it->second;
-			}else {
-				_frameLineMap[tag] = _lastFrameLine++;
-				line = _lastFrameLine;
-				addedLines = true;
-			}
-	 		
-			long avgTime = abs(frame.avgTime);
-			if(avgTime > 99999) avgTime = 99999;
-			
-			printf("\x1b[%d;0H %6ld %s",
-					 line + _topOffset,
-					 avgTime,
-					 hexDumpFrame(frame.frame, isOldFrame, frame.lastChange).c_str());
-			
-			auto protos = frameDB->protocolsForTag(tag);
-			for( auto proto : protos){
-				auto str = proto->descriptionForFrame(frame.frame);
-				if(!str.empty()){
-					printf("   %s", str.c_str());
-					break;
+			if( frameDB->frameWithTag(tag, &frame)){
+				
+				int line = 0;
+				auto it =  _frameLineMap.find(tag);
+				if(it != _frameLineMap.end()) {
+					line = it->second;
+				}else {
+					_frameLineMap[tag] = _lastFrameLine++;
+					line = _lastFrameLine;
+					addedLines = true;
 				}
+				
+				long avgTime = abs(frame.avgTime);
+				if(avgTime > 99999) avgTime = 99999;
+		
+				printf("\x1b[%d;0H %6ld %s",
+						 line + _topOffset,
+						 avgTime,
+						 hexDumpFrame(frame.frame, isOldFrame, frame.lastChange).c_str());
+
+				auto protos = frameDB->protocolsForTag(tag);
+				for( auto proto : protos){
+					auto str = proto->descriptionForFrame(frame.frame);
+					if(!str.empty()){
+						printf("   %s", str.c_str());
+						break;
+					}
+				}
+				printf("\x1b[0K");
 			}
-			printf("\x1b[0K");
 		}
 	}
-	
+		
 	//  erase the last line if we added one
 	if(addedLines){
 		printf("\x1b[%d;0H\x1b[0K", _lastFrameLine + _topOffset);
 	}
-		
-	printChangedValues(_lastFrameLine + _topOffset,  redraw || addedLines );
-	printHeaderLine();
+	
+	if (new_tags.size() > 0 || redraw) {
+		if(_mode == BOTH || _mode == VALUES){
+			printChangedValues(_lastFrameLine + _topOffset,  redraw || addedLines );
+		}
+		printHeaderLine();
+	}
 	
 	_lastEtag = newEtag;
-	
 }
+
 
 void FrameDumper::run() {
 	
@@ -367,6 +403,7 @@ void FrameDumper::run() {
 	printf("\x1b[0;0H\x1b[J\x1b[?25l");
 
 	while(_running){
+		
 		printChangedFrames(_ifName);
 		usleep(500);
 		}

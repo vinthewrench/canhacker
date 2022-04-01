@@ -66,7 +66,7 @@ private:
 
 	map<string, int> _interfaces;
 	fd_set	 _master_fds;		// Can sockets that are ready for read
-	int			_max_fds;
+	int		_max_fds;
 	
 	static CANBusMgr *sharedInstance;
 };

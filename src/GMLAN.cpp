@@ -101,9 +101,11 @@ typedef  enum  {
 		FUEL_CONSUMPTION,
 		THROTTLE_POS,
 		FAN_SPEED,
+		LIFE_OIL,
 		TEMP_COOLANT,
 		TEMP_TRANSMISSION,
 		PRESSURE_OIL,
+		TEMP_OIL,
 		VEHICLE_SPEED,
 		MASS_AIR_FLOW,
 		BAROMETRIC_PRESSURE,
@@ -132,7 +134,9 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{TEMP_AIR_INTAKE,		{"GM_INTAKE_TEMP",		"Intake Air Temp",						FrameDB::DEGREES_C}},
 	{TEMP_AIR_AMBIENT,	{"GM_AMBIANT_AIR_TEMP",	"Ambient air temperature",				FrameDB::DEGREES_C}},
 	{TRANS_GEAR,			{"GM_TRANS_GEAR",			"Current Gear",							FrameDB::STRING}},
-	{ENGINE_TORQUE,		{"GM_ENGINE_TORQUE",		"Engine Torque Actual",					FrameDB::NM}}
+	{ENGINE_TORQUE,		{"GM_ENGINE_TORQUE",		"Engine Torque Actual",					FrameDB::NM}},
+	{TEMP_OIL,				{"GM_OIL_TEMP",			"Engine Oil Temperature",				FrameDB::DEGREES_C}},
+	{LIFE_OIL,				{"GM_OIL_LIFE",			"Engine Oil Remaining Life",			FrameDB::PERCENT}},
 	};
 
 
@@ -274,8 +278,8 @@ void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when,
  };
 
 void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	float tPos = ((frame.data[1])* 100)/255;
-	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string((int)tPos),when, eTag);
+	float tPos = frame.data[1]/255.0;
+	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string(tPos),when, eTag);
 
 	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
 	db->updateValue(schemaKeyForValueKey(FUEL_CONSUMPTION), to_string(ifc),when, eTag);
@@ -284,14 +288,23 @@ void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when,
 
 void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 
-	float fan = ((frame.data[1])* 100)/255;
-	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string((int)fan),when, eTag);
+	float fan = frame.data[5] / 255.0;
+	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string(fan),when, eTag);
 
+	float oilLife = frame.data[6] / 255.0;
+	db->updateValue(schemaKeyForValueKey(LIFE_OIL), to_string(oilLife),when, eTag);
+
+	
 };
 
 void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
 	float oilpress =  (frame.data[2] * 4);
 	db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when, eTag);
+
+	float oiltemp =  (frame.data[1] - 40);
+	db->updateValue(schemaKeyForValueKey(TEMP_OIL), to_string(oiltemp),when, eTag);
+
+
 };
 
 
