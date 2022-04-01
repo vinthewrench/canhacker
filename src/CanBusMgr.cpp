@@ -141,7 +141,7 @@ bool CANBusMgr::stop(string ifName, int *errorOut){
 			if(fd != -1){
 				close(fd);
 				safe_fd_clr(fd, &_master_fds, &_max_fds);
-				_interfaces[ifName] = -1;
+				_interfaces[key] = -1;
 			}
 		}
 		return true;
