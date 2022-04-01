@@ -171,9 +171,9 @@ bool CANBusMgr::sendFrame(string ifName, canid_t can_id, vector<uint8_t> bytes, 
 	if (bytes.size() < 1 || bytes.size() > 8) {
 		error = EMSGSIZE;
  	}
-	else if (can_id > 0 )  {
-		error = EBADF;
-	}
+//	else if (can_id > 0 )  {
+//		error = EBADF;
+//	}
 	else if(!ifName.empty()){
 		for (auto& [key, fd]  : _interfaces){
 			if (strcasecmp(key.c_str(), ifName.c_str()) == 0){
