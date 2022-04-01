@@ -184,12 +184,16 @@ void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) 
 			int n;
 			char canport[20];
 			
+			int temp;	// multiplatform issue with tv_usec
+			 
 			if( sscanf(p,"(%ld.%d) %s%x#%n",
 						  &tv.tv_sec,
-						  &tv.tv_usec,
+						  &temp,
 						  canport,
 						  &frame.can_id,
 						  &n) != 4) continue;
+			
+			tv.tv_usec = temp;
 			
 			if(number == 1){
 				start_tv = tv;
