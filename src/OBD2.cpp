@@ -248,8 +248,6 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 		{
 			// if its one of ours we need to ask for more here..
 			// send a flow control Continue To Send (CTS) frame
-
-			
 			CANBusMgr*	canBus = CANBusMgr::shared();
 			if( canBus->sendFrame(ifName, can_id - 8 , {0x30}, NULL)){
 				
@@ -355,7 +353,7 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 			
 			// ECU Names have an alternate Schema
 			if(pid == 0x0A){
-				pid =  (pid << 4 || (can_id & 0xf) );
+				pid =  (0xA0 | (can_id & 0xf) );
 			}
  
 			if(_service9schemaMap.count(pid)){
