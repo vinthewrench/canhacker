@@ -249,8 +249,9 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 			// if its one of ours we need to ask for more here..
 			// send a flow control Continue To Send (CTS) frame
 
+			
 			CANBusMgr*	canBus = CANBusMgr::shared();
-			if( canBus->sendFrame(ifName, can_id, {0x30}, NULL)){
+			if( canBus->sendFrame(ifName, can_id - 8 , {0x30}, NULL)){
 				
 				// only store te continue if we were successful.
 				obd_state_t s;
