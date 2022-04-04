@@ -130,7 +130,7 @@ string_view Wranger2010::schemaKeyForValueKey(int valueKey) {
 	return schema->title;
   }
 
-void Wranger2010::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
 	switch(frame.can_id) {
 			
 		case 0x1E1:

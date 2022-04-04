@@ -19,7 +19,7 @@ public:
 
 	virtual void registerSchema(FrameDB*);
 	virtual void reset();
-	virtual void processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag);
+	virtual void processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag);
 
 	virtual string descriptionForFrame(can_frame_t frame);
  

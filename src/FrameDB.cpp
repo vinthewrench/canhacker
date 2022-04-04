@@ -259,7 +259,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 	// tell the protocols something changed
  	if(isNew || (changed.count() > 0))
 		for(auto proto : *theProtocols ){
-			proto->processFrame(this, frame, now, _lastEtag );
+			proto->processFrame(this, ifName, frame, now, _lastEtag );
 		};
 	
 }

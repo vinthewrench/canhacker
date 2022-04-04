@@ -181,7 +181,7 @@ string GMLAN::descriptionForFrame(can_frame_t frame){
  
 
 
-void  GMLAN::processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void  GMLAN::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
  
 	switch(frame.can_id) {
 

@@ -7,6 +7,7 @@
 
 #include "OBD2.hpp"
 #include "FrameDB.hpp"
+#include "CanBusMgr.hpp"
 
 #define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
 
@@ -26,7 +27,19 @@ static map<uint16_t, valueSchema_t> _J2190schemaMap ={
 
 static map<uint8_t, valueSchema_t> _service9schemaMap ={
 	{ 0x02,	{"OBD_VIN",	"Vehicle Identification Number",	FrameDB::STRING}},
-	{ 0x20,  {"OBD_ECU_NAME", "ECU name",	FrameDB::STRING}}
+	{ 0x0A,  {"OBD_ECU_NAME", "ECU name",	FrameDB::STRING}},
+	
+	// for ECU name shift by and att CanID offset for ECU
+	 //  (pid <<4 || (can_id & 0xf) )
+	{ 0xA8,  {"OBD_ECU_0_NAME", "ECU 0 name",	FrameDB::STRING}},
+	{ 0xA9,  {"OBD_ECU_1_NAME", "ECU 1 name",	FrameDB::STRING}},
+	{ 0xAA,  {"OBD_ECU_2_NAME", "ECU 2 name",	FrameDB::STRING}},
+	{ 0xAB,  {"OBD_ECU_3_NAME", "ECU 3 name",	FrameDB::STRING}},
+	{ 0xAC,  {"OBD_ECU_4_NAME", "ECU 4 name",	FrameDB::STRING}},
+	{ 0xAD,  {"OBD_ECU_5_NAME", "ECU 5 name",	FrameDB::STRING}},
+	{ 0xAE,  {"OBD_ECU_6_NAME", "ECU 6 name",	FrameDB::STRING}},
+	{ 0xAF,  {"OBD_ECU_7_NAME", "ECU 7 name",	FrameDB::STRING}},
+
 };
 
 static map<uint8_t,  valueSchema_t> _schemaMap =
@@ -132,53 +145,53 @@ static map<uint8_t,  valueSchema_t> _schemaMap =
 
 
  
-inline  std::string hexDumpOBDData(canid_t can_id, uint8_t mode, uint8_t pid, valueSchema_t* schema,
-											  uint16_t len, uint8_t* data) {
-	
-	char      	 lineBuf[256] ;
-	char       	 *p = lineBuf;
-	bool showHex = true;
-	bool showascii = false;
-	uint16_t ext = 0;
-	
-	if(mode == 0x22){
-		ext = (pid << 8) | data[0];
-		data++;
-		len--;
-	}
-	
-	p += sprintf(p, "%03X %02X, %02X [%d] ",  can_id, mode, pid, len);
-
-	if(mode == 9 && pid == 2){
-		showHex = false;
-		showascii = true;
-	}
-	
-	if(showHex){
-		for (int i = 0; i < len; i++) p += sprintf(p,"%02X ",data[i]);
-		for (int i = 7; i >  len ; i--) p += sprintf(p,"   ");
-	}
-	
-	if(showascii){
-		for (int i = 0; i < len; i++)  {
-		uint8_t c = data[i] & 0xFF;
-		if (c > ' ' && c < '~')
-			*p++ = c ;
-		else {
-			*p++ = '.';
-		}
-	}
-	}
-	p += sprintf(p,"  ");
- 
-	if(schema){
-		p += sprintf(p, "\t%s",  string(schema->description).c_str());
-	}
-		
-	*p++ = 0;
-	
-	return string(lineBuf);
-}
+//inline  std::string hexDumpOBDData(canid_t can_id, uint8_t mode, uint8_t pid, valueSchema_t* schema,
+//											  uint16_t len, uint8_t* data) {
+//
+//	char      	 lineBuf[256] ;
+//	char       	 *p = lineBuf;
+//	bool showHex = true;
+//	bool showascii = false;
+//	uint16_t ext = 0;
+//
+//	if(mode == 0x22){
+//		ext = (pid << 8) | data[0];
+//		data++;
+//		len--;
+//	}
+//
+//	p += sprintf(p, "%03X %02X, %02X [%d] ",  can_id, mode, pid, len);
+//
+//	if(mode == 9 && pid == 2){
+//		showHex = false;
+//		showascii = true;
+//	}
+//
+//	if(showHex){
+//		for (int i = 0; i < len; i++) p += sprintf(p,"%02X ",data[i]);
+//		for (int i = 7; i >  len ; i--) p += sprintf(p,"   ");
+//	}
+//
+//	if(showascii){
+//		for (int i = 0; i < len; i++)  {
+//		uint8_t c = data[i] & 0xFF;
+//		if (c > ' ' && c < '~')
+//			*p++ = c ;
+//		else {
+//			*p++ = '.';
+//		}
+//	}
+//	}
+//	p += sprintf(p,"  ");
+//
+//	if(schema){
+//		p += sprintf(p, "\t%s",  string(schema->description).c_str());
+//	}
+//
+//	*p++ = 0;
+//
+//	return string(lineBuf);
+//}
 
 OBD2::OBD2(){
 	_ecu_messages.clear();
@@ -207,7 +220,7 @@ void OBD2::reset() {
 }
 
 
-void OBD2:: processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
 
 	canid_t can_id = frame.can_id & CAN_SFF_MASK;
 	
@@ -233,15 +246,23 @@ void OBD2:: processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTa
 			
 		case 1: // first CAN message of a fragmented OBD-2 message
 		{
-			obd_state_t s;
-	 
-			s.rollingcnt = 1;
-			s.total_len = ((frame.data[0] & 0x0f) | frame.data[1]) - 2;
-			s.mode = frame.data[2] & 0x1F;
-			s.pid = frame.data[3];
-			memcpy(s.buffer, &frame.data[4], 4);
-			s.current_len = 4;
-			_ecu_messages[can_id] = s;
+			// if its one of ours we need to ask for more here..
+			// send a flow control Continue To Send (CTS) frame
+
+			CANBusMgr*	canBus = CANBusMgr::shared();
+			if( canBus->sendFrame(ifName, can_id, {0x30}, NULL)){
+				
+				// only store te continue if we were successful.
+				obd_state_t s;
+		 
+				s.rollingcnt = 1;
+				s.total_len = ((frame.data[0] & 0x0f) | frame.data[1]) - 2;
+				s.mode = frame.data[2] & 0x1F;
+				s.pid = frame.data[3];
+				memcpy(s.buffer, &frame.data[4], 4);
+				s.current_len = 4;
+				_ecu_messages[can_id] = s;
+ 			}
 		}
 			break;
 		
@@ -276,7 +297,7 @@ void OBD2:: processFrame(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTa
  };
 
 // value calculation and corrections
-static string valueForData( uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
+static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
 	string value = string();
 
 	if(mode == 0x22){	 // mode 22  J2190
@@ -298,7 +319,6 @@ static string valueForData( uint8_t mode, uint8_t pid, uint16_t len, uint8_t* da
 			case 0x9:  //FUEL_TRIM
 				value = to_string(  (data[0] * (100.0/128.0)) - 100. ) ;
 				break;
-				
 		}
 	}
 	
@@ -331,6 +351,12 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 			break;
 			
 		case 9:
+			
+			// ECU Names have an alternate Schema
+			if(pid == 0x0A){
+				pid =  (pid << 4 || (can_id & 0xf) );
+			}
+ 
 			if(_service9schemaMap.count(pid)){
 				schema = &_service9schemaMap[pid];
 			}
@@ -347,8 +373,9 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 		}
 	}
 	
-	string value = valueForData(mode,pid,len, data);
-	db->updateValue(schema->title,value,when, eTag);
+ 
+	string value = valueForData(can_id, mode,pid,len, data);
+	db->updateValue(schema->title  ,value,when, eTag);
 }
 
  

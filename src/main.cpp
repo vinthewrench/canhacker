@@ -125,7 +125,10 @@ static bool OBDCmdHandler( stringvector 		line,
 		}
 		
 		if(cmdStr == "vin"){
-			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x02}, &errnum);
+		}
+		if(cmdStr == "ecu"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x0A}, &errnum);
 		}
 		else if(cmdStr == "pids1"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
@@ -139,6 +142,7 @@ static bool OBDCmdHandler( stringvector 		line,
 		else if(cmdStr == "volts"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
+		
 
 		else {
 			errorStr =  "Command: \x1B[36;1;4m"  + cmdStr + "\x1B[0m is not valid \r\n";
