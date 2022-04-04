@@ -127,7 +127,7 @@ static bool OBDCmdHandler( stringvector 		line,
 		if(cmdStr == "vin"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x02}, &errnum);
 		}
-		if(cmdStr == "ecu"){
+		else if(cmdStr == "ecu"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x0A}, &errnum);
 		}
 		else if(cmdStr == "pids1"){
