@@ -130,7 +130,7 @@ string_view Wranger2010::schemaKeyForValueKey(int valueKey) {
 	return schema->title;
   }
 
-void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
+void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when){
 	switch(frame.can_id) {
 			
 		case 0x1E1:
@@ -139,7 +139,7 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 			if (xx != 0xFFFF){
 				float angle = xx - 4096. ;
 				angle = angle * 0.4;
-				db->updateValue(schemaKeyForValueKey(STEERING_ANGLE), to_string((int)angle), when, eTag);
+				db->updateValue(schemaKeyForValueKey(STEERING_ANGLE), to_string((int)angle), when);
 			};
 			
  	 		}
@@ -175,7 +175,7 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 			}
 			
 			if(!value.empty()){
-				db->updateValue(schemaKeyForValueKey(KEY_POSITION), value, when, eTag);
+				db->updateValue(schemaKeyForValueKey(KEY_POSITION), value, when);
 			}
 		}
 			break;
@@ -184,27 +184,27 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 		{
 			uint32_t dist = 	(frame.data[0] << 16  | frame.data[1] <<8  | frame.data[2] );
 			if(dist != 0xffffff)
-				db->updateValue(schemaKeyForValueKey(VEHICLE_DISTANCE), to_string(dist), when, eTag);
+				db->updateValue(schemaKeyForValueKey(VEHICLE_DISTANCE), to_string(dist), when);
 		}
 			break;
 
 		case 0x21B:	//Fuel level
 		{
 			float level = 	( frame.data[5] / 160.0 );
-			db->updateValue(schemaKeyForValueKey(FUEL_LEVEL), to_string(level), when, eTag);
+			db->updateValue(schemaKeyForValueKey(FUEL_LEVEL), to_string(level), when);
 		}
 			break;
 
 		case 0x244: //Door Status
 		{
 			int doors = 	 frame.data[0] ;
-			db->updateValue(schemaKeyForValueKey(DOORS), to_string(doors), when, eTag);
+			db->updateValue(schemaKeyForValueKey(DOORS), to_string(doors), when);
 			
 			int locks = 	 frame.data[4] ;
 			if(locks & 0x80)
-				db->updateValue(schemaKeyForValueKey(DOORS_LOCK), to_string(false), when, eTag);
+				db->updateValue(schemaKeyForValueKey(DOORS_LOCK), to_string(false), when);
 			else if(locks & 0x08)
-				db->updateValue(schemaKeyForValueKey(DOORS_LOCK),  to_string(true), when, eTag);
+				db->updateValue(schemaKeyForValueKey(DOORS_LOCK),  to_string(true), when);
 			
 		}
 			break;
@@ -214,7 +214,7 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 			uint16_t xx = (frame.data[0] <<8 | frame.data[1]);
 			if (xx != 0xFFFF){
 				xx *= 4;
-				db->updateValue(schemaKeyForValueKey(RPM), to_string(xx), when, eTag);
+				db->updateValue(schemaKeyForValueKey(RPM), to_string(xx), when);
 			};
 		}
 			break;
@@ -222,8 +222,8 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 		case 0x3E6: //Clock Time Display
 		{
 			char str[10];
-			sprintf (str, "%d:%02d:%02d", frame.data[0], frame.data[1],frame.data[2]);\
-			db->updateValue(schemaKeyForValueKey(CLOCK), string(str), when, eTag);
+			sprintf (str, "%d:%02d:%02d", frame.data[0], frame.data[1],frame.data[2]);
+			db->updateValue(schemaKeyForValueKey(CLOCK), string(str), when);
 		}
 			break;
 
@@ -257,7 +257,7 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 				case 2:
 					if(b0 == 2){
 						_VIN.append((char *)&frame.data[1], 7);
-						db->updateValue(schemaKeyForValueKey(VIN), _VIN, when, eTag);
+						db->updateValue(schemaKeyForValueKey(VIN), _VIN, when);
 						stage++;
 				}
 					break;

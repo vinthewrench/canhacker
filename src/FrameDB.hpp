@@ -96,6 +96,7 @@ class FrameDB {
 		RATIO,			//
 		FUEL_TRIM,		//
 		NM,				// Newton Meters
+		DATA,				// DATA block
 		SPECIAL,
 		IGNORE,
 		UNKNOWN,
@@ -111,7 +112,7 @@ class FrameDB {
 	void addSchema(string_view key,  valueSchema_t schema);
 	valueSchema_t schemaForKey(string_view key);
 
-	void updateValue(string_view key, string value, time_t when,  eTag_t eTag);
+	void updateValue(string_view key, string value, time_t when);
 	void clearValues();
 	int valuesCount();
 
@@ -127,8 +128,9 @@ private:
 	static FrameDB *sharedInstance;
 	
 	mutable std::mutex _mutex;
-	eTag_t _lastEtag;
-	
+	eTag_t 		_lastEtag;
+	eTag_t 		_lastValueEtag;
+
 	ifTag_t _lastInterfaceTag;
  
 	typedef struct {

@@ -55,6 +55,7 @@ private:
 	dump_mode_t 	_lastmode;
 
 	eTag_t 			_lastEtag;
+	eTag_t 			_lastValueEtag;
 
 	int 				_topOffset;
 	

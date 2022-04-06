@@ -84,6 +84,8 @@ static bool STOPCmdHandler( stringvector line,
 	return false;
 };
 
+
+
 static bool OBDCmdHandler( stringvector 		line,
 								  CmdLineMgr* 		mgr,
 								  boolCallback_t 	cb){
@@ -94,35 +96,33 @@ static bool OBDCmdHandler( stringvector 		line,
 	string canStr;
 	CANBusMgr*	canBus = CANBusMgr::shared();
 
+ 	// my version only has OBD on can1
+ 
+	portStr = "can1";
+	canid_t can_id = 0x7DF;	// brodcast OBD
+
+	
 	if(line.size() > 1)
-		portStr = line[1];
-	
-	if(line.size() > 2)
-		cmdStr = line[2];
-	
-	if(line.size() > 3){
+		cmdStr = line[1];
+
+	if(line.size() > 2){
 		canStr = line[2];
-		cmdStr = line[3];
+		
+		if( ! regex_match(canStr, std::regex("^[A-Fa-f0-9]{3}"))
+			||  !( std::sscanf(canStr.c_str(), "%x", &can_id) == 1)){
+			errorStr =  "\x1B[36;1;4m"  + canStr + "\x1B[0m is not a valid a CAN ID. \r\n";
+			goto done;
+		}
 	}
-	
-	std::transform(portStr.begin(), portStr.end(), portStr.begin(), ::tolower);
+
 	std::transform(cmdStr.begin(), cmdStr.end(), cmdStr.begin(), ::tolower);
  
-	if(portStr.empty() || cmdStr.empty() ) {
-		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a CAN interface and command. \r\n";
+	if(cmdStr.empty() ) {
+		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects command. \r\n";
 	}
 	else {
-		canid_t can_id = 0x7DF;	// brodcast OBD
 		int  errnum = 0;
 		bool success = false;
-		
-		if(!canStr.empty()) {
-			if( ! regex_match(canStr, std::regex("^[A-Fa-f0-9]{3}"))
-				||  !( std::sscanf(canStr.c_str(), "%x", &can_id) == 1)){
-				errorStr =  "\x1B[36;1;4m"  + canStr + "\x1B[0m is not a valid a CAN ID. \r\n";
-				goto done;
-			}
-		}
 		
 		if(cmdStr == "vin"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x02}, &errnum);
@@ -142,8 +142,9 @@ static bool OBDCmdHandler( stringvector 		line,
 		else if(cmdStr == "volts"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
-		
-
+		else if(cmdStr == "clearDTC"){
+			success = canBus->sendFrame(portStr, can_id, {0x04}, &errnum);
+		}
 		else {
 			errorStr =  "Command: \x1B[36;1;4m"  + cmdStr + "\x1B[0m is not valid \r\n";
 			goto done;

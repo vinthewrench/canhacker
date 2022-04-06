@@ -8,6 +8,9 @@
 #include "OBD2.hpp"
 #include "FrameDB.hpp"
 #include "CanBusMgr.hpp"
+#include "Utils.hpp"
+
+#include <string.h>
 
 #define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
 
@@ -25,26 +28,35 @@ static map<uint16_t, valueSchema_t> _J2190schemaMap ={
 	{0x199A, 	{"OBD_TRANS_GEAR",	"Current Gear",			FrameDB::STRING}},
  };
 
-static map<uint8_t, valueSchema_t> _service9schemaMap ={
+static map<uint32_t, valueSchema_t> _service9schemaMap ={
 	{ 0x02,	{"OBD_VIN",	"Vehicle Identification Number",	FrameDB::STRING}},
+
 	{ 0x0A,  {"OBD_ECU_NAME", "ECU name",	FrameDB::STRING}},
+		{  0x7e90A,  {"OBD_ECU_1_NAME", "ECU 1 name",	FrameDB::STRING}},
+		{  0x7eA0A,  {"OBD_ECU_2_NAME", "ECU 2 name",	FrameDB::STRING}},
+		{  0x7eB0A,  {"OBD_ECU_3_NAME", "ECU 3 name",	FrameDB::STRING}},
+		{  0x7eC0A,  {"OBD_ECU_4_NAME", "ECU 4 name",	FrameDB::STRING}},
+		{  0x7eD0A,  {"OBD_ECU_5_NAME", "ECU 5 name",	FrameDB::STRING}},
+		{  0x7eE0A,  {"OBD_ECU_6_NAME", "ECU 6 name",	FrameDB::STRING}},
+		{  0x7eF0A,  {"OBD_ECU_7_NAME", "ECU 7 name",	FrameDB::STRING}},
 	
-	// for ECU name shift by and att CanID offset for ECU
-	 //  (pid <<4 || (can_id & 0xf) )
-	{ 0xA8,  {"OBD_ECU_0_NAME", "ECU 0 name",	FrameDB::STRING}},
-	{ 0xA9,  {"OBD_ECU_1_NAME", "ECU 1 name",	FrameDB::STRING}},
-	{ 0xAA,  {"OBD_ECU_2_NAME", "ECU 2 name",	FrameDB::STRING}},
-	{ 0xAB,  {"OBD_ECU_3_NAME", "ECU 3 name",	FrameDB::STRING}},
-	{ 0xAC,  {"OBD_ECU_4_NAME", "ECU 4 name",	FrameDB::STRING}},
-	{ 0xAD,  {"OBD_ECU_5_NAME", "ECU 5 name",	FrameDB::STRING}},
-	{ 0xAE,  {"OBD_ECU_6_NAME", "ECU 6 name",	FrameDB::STRING}},
-	{ 0xAF,  {"OBD_ECU_7_NAME", "ECU 7 name",	FrameDB::STRING}},
+	{ 0x04,  {"OBD_CAL_ID", "Calibration ID",							FrameDB::DATA}},
+	{ 0x06,  {"OBD_CVN", "Calibration Verification Numbers ",	FrameDB::DATA}},
 
 };
 
-static map<uint8_t,  valueSchema_t> _schemaMap =
+
+static map<uint32_t,  valueSchema_t> _schemaMap =
 {
-	{ 0x00,	{"OBD_PIDS_A",	"Supported PIDs [01-20]",	FrameDB::BINARY}},
+	{ 0x00,		{"OBD_PIDS_A",	"Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7e900,	{"OBD_PIDS_A1",	"ECU 1 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eA00,	{"OBD_PIDS_A2",	"ECU 2 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eB00,	{"OBD_PIDS_A3",	"ECU 3 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eC00,	{"OBD_PIDS_A4",	"ECU 4 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eD00,	{"OBD_PIDS_A5",	"ECU 5 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eE00,	{"OBD_PIDS_A6",	"ECU 6 Supported PIDs [01-20]",	FrameDB::DATA}},
+	{ 0x7eF00,	{"OBD_PIDS_A7",	"ECU 7 Supported PIDs [01-20]",	FrameDB::DATA}},
+	
 	{ 0x01,	{"OBD_STATUS",	"Status since DTCs cleared",	FrameDB::SPECIAL}},
 	{ 0x02,	{"OBD_FREEZE_DTC",	"DTC that triggered the freeze frame",	FrameDB::SPECIAL}},
 	{ 0x03,	{"OBD_FUEL_STATUS",	"Fuel System Status",	FrameDB::STRING}},
@@ -76,7 +88,17 @@ static map<uint8_t,  valueSchema_t> _schemaMap =
 	{ 0x1D,	{"OBD_O2_SENSORS_ALT",	"O2 Sensors Present (alternate)",FrameDB::SPECIAL}},
 	{ 0x1E,	{"OBD_AUX_INPUT_STATUS",	"Auxiliary input status (power take off)",	FrameDB::BOOL}},
 	{ 0x1F,	{"OBD_RUN_TIME",	"Engine Run Time",	FrameDB::SECONDS}},
-	{ 0x20,	{"OBD_PIDS_B",	"Supported PIDs [21-40]",	FrameDB::BINARY}},
+	
+	{ 0x20,		{"OBD_PIDS_B",	"Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7e920,	{"OBD_PIDS_B1",	"ECU 1 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eA20,	{"OBD_PIDS_B2",	"ECU 2 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eB20,	{"OBD_PIDS_B3",	"ECU 3 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eC20,	{"OBD_PIDS_B4",	"ECU 4 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eD20,	{"OBD_PIDS_B5",	"ECU 5 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eE20,	{"OBD_PIDS_B6",	"ECU 6 Supported PIDs [21-40]",	FrameDB::DATA}},
+	{ 0x7eF20,	{"OBD_PIDS_B7",	"ECU 7 Supported PIDs [21-40]",	FrameDB::DATA}},
+
+	
 	{ 0x21,	{"OBD_DISTANCE_W_MIL",	"Distance Traveled with MIL on",	FrameDB::KM}},
 	{ 0x22,	{"OBD_FUEL_RAIL_PRESSURE_VAC",	"Fuel Rail Pressure (relative to vacuum)",	FrameDB::KPA}},
 	{ 0x23,	{"OBD_FUEL_RAIL_PRESSURE_DIRECT",	"Fuel Rail Pressure (direct inject)",	FrameDB::KPA}},
@@ -108,7 +130,17 @@ static map<uint8_t,  valueSchema_t> _schemaMap =
 	{ 0x3D,	{"OBD_CATALYST_TEMP_B2S1",	"Catalyst Temperature: Bank 2 - Sensor 1",	FrameDB::DEGREES_C}},
 	{ 0x3E,	{"OBD_CATALYST_TEMP_B1S2",	"Catalyst Temperature: Bank 1 - Sensor 2",	FrameDB::DEGREES_C}},
 	{ 0x3F,	{"OBD_CATALYST_TEMP_B2S2",	"Catalyst Temperature: Bank 2 - Sensor 2",	FrameDB::DEGREES_C}},
-	{ 0x40,	{"OBD_PIDS_C",	"Supported PIDs [41-60]",	FrameDB::BINARY}},
+	
+	{ 0x40,	{"OBD_PIDS_C",	"Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7e940,	{"OBD_PIDS_C1",	"ECU 1 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eA40,	{"OBD_PIDS_C2",	"ECU 2 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eB40,	{"OBD_PIDS_C3",	"ECU 3 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eC40,	{"OBD_PIDS_C4",	"ECU 4 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eD40,	{"OBD_PIDS_C5",	"ECU 5 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eE40,	{"OBD_PIDS_C6",	"ECU 6 Supported PIDs [41-60]",	FrameDB::DATA}},
+	{ 0x7eF40,	{"OBD_PIDS_C7",	"ECU 7 Supported PIDs [41-60]",	FrameDB::DATA}},
+
+	
 	{ 0x41,	{"OBD_STATUS_DRIVE_CYCLE",	"Monitor status this drive cycle",	FrameDB::SPECIAL}},
 	{ 0x42,	{"OBD_CONTROL_MODULE_VOLTAGE",	"Control module voltage",	FrameDB::VOLTS}},
 	{ 0x43,	{"OBD_ABSOLUTE_LOAD",	"Absolute load value",	FrameDB::PERCENT}},
@@ -220,10 +252,11 @@ void OBD2::reset() {
 }
 
 
-void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
+void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when){
 
 	canid_t can_id = frame.can_id & CAN_SFF_MASK;
 	
+	//ISO 15765-2
 	// is it an OBD2 request
 	if((can_id & CAN_OBD_MASK) != 0x700) return;
  
@@ -238,7 +271,7 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 				uint8_t mode = frame.data[1] & 0x3f;
 				uint8_t pid = frame.data[2];
 				
-				processOBDResponse(db, when, eTag, can_id,
+				processOBDResponse(db, when, can_id,
 										 	mode, pid, len-2, &frame.data[3]);
 			}
 		}
@@ -249,7 +282,9 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 			// if its one of ours we need to ask for more here..
 			// send a flow control Continue To Send (CTS) frame
 			CANBusMgr*	canBus = CANBusMgr::shared();
-			if( canBus->sendFrame(ifName, can_id - 8 , {0x30, 0x00, 0x0A}, NULL)){
+	 		
+			if(canBus->isReadingFile()
+				||  canBus->sendFrame(ifName, can_id - 8 , {0x30, 0x00, 0x0A}, NULL)){
 				
 				// only store te continue if we were successful.
 				obd_state_t s;
@@ -261,7 +296,7 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 				memcpy(s.buffer, &frame.data[4], 4);
 				s.current_len = 4;
 				_ecu_messages[can_id] = s;
- 			}
+  			}
 		}
 			break;
 		
@@ -272,7 +307,7 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 				auto s = &it->second;
 				uint8_t rollingcnt =  (frame.data[0] & 0x0f);
 				if(s->rollingcnt != rollingcnt) break;
-				s->rollingcnt++;
+				s->rollingcnt = (s->rollingcnt+1) & 0x0f;  // MODULO 16
 				
 				uint16_t len = s->total_len - s->current_len;
 				if(len > 7) len = 7;
@@ -280,7 +315,7 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 				s->current_len += len;
 				
 				if(s->current_len == s->total_len) {
-					processOBDResponse(db, when, eTag,
+					processOBDResponse(db, when,
 											 can_id, s->mode, s->pid,
 											  s->total_len, s->buffer);
 					_ecu_messages.erase(it);
@@ -288,7 +323,8 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
 			}
 			break;
 		}
-			
+		case 3:  // ignore flow control Continue To Send (CTS) frame
+			break;
 		default: ;
 			// not handled?
 	
@@ -296,9 +332,12 @@ void OBD2:: processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t wh
  };
 
 // value calculation and corrections
-static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
+static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid,
+									valueSchema_t* schema,
+									uint16_t len, uint8_t* data){
 	string value = string();
 
+	
 	if(mode == 0x22){	 // mode 22  J2190
 		
 		uint16_t ext = (pid << 8) | data[0];
@@ -318,7 +357,42 @@ static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid, uint16_t l
 			case 0x9:  //FUEL_TRIM
 				value = to_string(  (data[0] * (100.0/128.0)) - 100. ) ;
 				break;
+			default: break;
 		}
+	}
+	else  if(mode == 9) {
+		switch(pid){
+			case 0x02: //Vehicle Identification Number (VIN)
+			{
+							// skip Number of data items: (NODI)
+				data++; len --;
+				size_t len1 = strnlen((char* )data, len );
+				value = string( (char* )data, len1);
+			}
+ 				break;
+		
+			case 0x0A: // ECU's/module's acronym and text name
+			{
+				// skip Number of data items: (NODI)
+				data++; len --;
+				size_t len1 = strnlen((char* )data, len );
+				value = string( (char* )data, len1); // grab ECU acronym,
+ 				if(len1 < 4 && len > 4 ) {
+					// there might be a filler byte so skip the first 4 chars and append the rest
+					len = len - 4;
+					data+= 4;
+					len1 = strnlen((char* )data, len );
+					value.append( string( (char* )data, len1));
+				}
+ 			}
+				break;
+			default: break;
+		}
+	}
+	
+	// convert to hex string
+	if(schema->units	 == FrameDB::DATA){
+		value = hexStr(data, len);
 	}
 	
 	if(value.empty()){
@@ -335,7 +409,7 @@ static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid, uint16_t l
 }
 
 
-void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
+void OBD2::processOBDResponse(FrameDB* db,time_t when,
 										canid_t can_id,
 									   uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data){
 	
@@ -344,21 +418,44 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 	switch(mode){
 		case 1:
 		case 2:
-			if(_schemaMap.count(pid)){
-				schema = &_schemaMap[pid];
+		{
+			// any other ECU than 7e8 uses the alternate Schema ID
+			uint32_t altPid = pid;
+			if(can_id != 0x7e8) {
+				switch(pid) {
+					case 0x00:
+					case 0x20:
+					case 0x40:
+						altPid =  (can_id <<8) | altPid;
+						break;
+				}
 			}
+			
+			if(_schemaMap.count(altPid)){
+				schema = &_schemaMap[altPid];
+			}
+		}
+			break;
+			
+		case 4: // clear diag codes?
 			break;
 			
 		case 9:
-			
-			// ECU Names have an alternate Schema
-			if(pid == 0x0A){
-				pid =  (0xA0 | (can_id & 0xf) );
+		{
+			// any other ECU than 7e8 uses the alternate Schema ID
+			uint32_t altPid = pid;
+			if(can_id != 0x7e8) {
+				switch(pid) {
+					case 0x0A:
+						altPid =  (can_id <<8) | altPid;
+						break;
+				}
 			}
- 
-			if(_service9schemaMap.count(pid)){
-				schema = &_service9schemaMap[pid];
+		 
+			if(_service9schemaMap.count(altPid)){
+				schema = &_service9schemaMap[altPid];
 			}
+		}
 			break;
 			
 		case 0x22:
@@ -373,8 +470,13 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
 	}
 	
  
-	string value = valueForData(can_id, mode,pid,len, data);
-	db->updateValue(schema->title  ,value,when, eTag);
+	if(!schema){
+//		printf("No schema for mode: %d  pid %d\n", mode, pid);
+		return;
+	}
+	
+	string value = valueForData(can_id, mode,pid, schema, len, data);
+	db->updateValue(schema->title  ,value,when);
 }
 
  
@@ -418,8 +520,6 @@ string OBD2::descriptionForFrame(can_frame_t frame){
  7EA (22 13) [2] 06 61                  SAE J2190 Code 22 (132A) FUEL
  7E8 (22 11) [1] 5A                     SAE J2190 Code 22 (115C) OIL_PRESSURE
  7EA (22 19) [1] 01                     SAE J2190 Code 22 (199A) GEAR
- 7E8 (09 02) [18] .1J4BA6H19AL220060    VIN number
- 7E8 (09 02) [18] .3FADP4FJ2BM113913    VIN number
  OK>
 
 

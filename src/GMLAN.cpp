@@ -7,6 +7,7 @@
 
 #include "GMLAN.hpp"
 #include "FrameDB.hpp"
+#include <bitset>
 
 #define PLAT_GEN_STAT	0x1F1
 
@@ -96,26 +97,31 @@ static map<uint, string> knownPid = {
 };
 
 typedef  enum  {
-		ENGINE_RPM,
-		ENGINE_RUNNING,
-		FUEL_CONSUMPTION,
-		THROTTLE_POS,
-		FAN_SPEED,
-		OLF,
-		OLF_RESET,
-		TEMP_COOLANT,
-		TEMP_TRANSMISSION,
-		PRESSURE_OIL,
-		TEMP_OIL,
-		VEHICLE_SPEED,
-		MASS_AIR_FLOW,
-		BAROMETRIC_PRESSURE,
-		TEMP_AIR_INTAKE,
-		TEMP_AIR_AMBIENT,
-		TRANS_GEAR,
-		ENGINE_TORQUE,
-
-		} value_keys_t;
+	ENGINE_RPM,
+	ENGINE_RUNNING,
+	FUEL_CONSUMPTION,
+	THROTTLE_POS,
+	FAN_SPEED,
+	OLF,
+	OLF_RESET,
+	TEMP_COOLANT,
+	TEMP_TRANSMISSION,
+	PRESSURE_OIL,
+	TEMP_OIL,
+	VEHICLE_SPEED,
+	MASS_AIR_FLOW,
+	BAROMETRIC_PRESSURE,
+	TEMP_AIR_INTAKE,
+	TEMP_AIR_AMBIENT,
+	TRANS_GEAR,
+	ENGINE_TORQUE,
+// warnimg lights
+	GM_CHECK_ENGINE,
+	GM_CHANGE_OIL,
+	GM_REDUCED_POWER,
+	GM_CHECK_FUELCAP,
+	GM_OIL_LOW,
+} value_keys_t;
 
 
 typedef FrameDB::valueSchema_t valueSchema_t;
@@ -139,7 +145,13 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{TEMP_OIL,				{"GM_OIL_TEMP",			"Engine Oil Temperature",				FrameDB::DEGREES_C}},
 	{OLF,						{"GM_OLF",					"Engine Oil Remaining Life",			FrameDB::PERCENT}},
 	{OLF_RESET,				{"GM_OLF_RESET",			"RESET Oil Life Performed",			FrameDB::BOOL}},
-	};
+
+	{GM_CHECK_ENGINE,		{"GM_CHECK_ENGINE",		"Engine Diagnostic Trouble Code Present Indication On",		FrameDB::BOOL}},
+	{GM_CHANGE_OIL,		{"GM_CHANGE_OIL",			"Engine Oil Change Indication On",									FrameDB::BOOL}},
+	{GM_REDUCED_POWER,	{"GM_REDUCED_POWER",		"Reduced Power Indication On",										FrameDB::BOOL}},
+	{GM_CHECK_FUELCAP,	{"GM_CHECK_FUELCAP",		"Check Fuel Filler Cap Indication On",								FrameDB::BOOL}},
+	{GM_OIL_LOW,			{"GM_OIL_LOW",					"Engine Oil Level Low Indication On",							FrameDB::BOOL}},
+};
 
 
 GMLAN::GMLAN(){
@@ -181,64 +193,64 @@ string GMLAN::descriptionForFrame(can_frame_t frame){
  
 
 
-void  GMLAN::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag){
+void  GMLAN::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when){
  
 	switch(frame.can_id) {
 
 		case PLAT_GEN_STAT:
-			processPlatGenStatus(db, frame,when,eTag);
+			processPlatGenStatus(db, frame,when);
 			break;
 			
 		case ENGINE_GEN_STAT:
-			processEngineGenStatus(db, frame,when,eTag);
+			processEngineGenStatus(db, frame,when);
 			break;
 			
 		case ENGINE_GEN_STAT_1:
-			processEngineGenStatus1(db, frame,when,eTag);
+			processEngineGenStatus1(db, frame,when);
 			break;
 		
 		case ENGINE_GEN_STAT_2:
-			processEngineGenStatus2(db, frame,when,eTag);
+			processEngineGenStatus2(db, frame,when);
 			break;
 
 		case ENGINE_GEN_STAT_3:
-			processEngineGenStatus3(db, frame,when,eTag);
+			processEngineGenStatus3(db, frame,when);
 			break;
 
 		case ENGINE_GEN_STAT_5:
-			processEngineGenStatus5(db, frame,when,eTag);
+			processEngineGenStatus5(db, frame,when);
 			break;
 	
 		case FUEL_SYSTEM_2:
-			processFuelSystemRequest2(db, frame,when,eTag);
+			processFuelSystemRequest2(db, frame,when);
 			break;
 		
 		case ENGINE_GEN_STAT_4:
-			processEngineGenStatus4(db, frame,when,eTag);
+			processEngineGenStatus4(db, frame,when);
 			break;
 
 		case TRANS_STAT_3:
-			processTransmissionStatus3(db, frame,when,eTag);
+			processTransmissionStatus3(db, frame,when);
 			break;
 
 		case TRANS_STAT_2:
-			processTransmissionStatus2(db, frame,when,eTag);
+			processTransmissionStatus2(db, frame,when);
 			break;
  
 		case ENGINE_TORQUE_STAT_2:
-			processEngineTorqueStatus3(db, frame,when,eTag);
+			processEngineTorqueStatus3(db, frame,when);
 			break;
  			
 		case PLAT_CONF:
-			processPlatformConfiguration(db, frame,when,eTag);
+			processPlatformConfiguration(db, frame,when);
 			break;
 		
 		case TRAN_ROT:
-			processTransOutRotation(db, frame,when,eTag);
+			processTransOutRotation(db, frame,when);
 			break;
 
 		case VEHICLE_SPEED_DIST:
-			processVehicleSpeed(db, frame,when,eTag);
+			processVehicleSpeed(db, frame,when);
 			break;
 
 			
@@ -249,99 +261,124 @@ void  GMLAN::processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t w
 }
 
 
-void GMLAN::processEngineTorqueStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineTorqueStatus3(FrameDB* db, can_frame_t frame, time_t when){
 	
 	bool torqueValid = (frame.data[0] & 0x10) == 0x10;
 	
 	if(torqueValid) {
 		int N = 	(frame.data[0] & 0x0f) <<8 | frame.data[0];
 		float torque =  (N * 0.50) - 848;
-		db->updateValue(schemaKeyForValueKey(ENGINE_TORQUE), to_string(torque), when, eTag);
+		db->updateValue(schemaKeyForValueKey(ENGINE_TORQUE), to_string(torque), when);
 	}
 }
 
-void GMLAN::processPlatGenStatus(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processPlatGenStatus(FrameDB* db, can_frame_t frame, time_t when){
 
 };
 
-void GMLAN::processEngineGenStatus(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineGenStatus(FrameDB* db, can_frame_t frame, time_t when){
 
 };
 
-void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when){
 
 	
 	bool running =  frame.data[0] & 0x80;
-	db->updateValue(schemaKeyForValueKey(ENGINE_RUNNING), to_string(running), when, eTag);
+	db->updateValue(schemaKeyForValueKey(ENGINE_RUNNING), to_string(running), when);
 
 	int rpm = 	frame.data[1] <<8 | frame.data[2];
-	db->updateValue(schemaKeyForValueKey(ENGINE_RPM), to_string(rpm), when, eTag);
+	db->updateValue(schemaKeyForValueKey(ENGINE_RPM), to_string(rpm), when);
  
  };
 
-void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when){
 	float tPos = frame.data[1]/255.0;
-	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string(tPos),when, eTag);
+	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string(tPos),when);
 
 	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
-	db->updateValue(schemaKeyForValueKey(FUEL_CONSUMPTION), to_string(ifc),when, eTag);
+	db->updateValue(schemaKeyForValueKey(FUEL_CONSUMPTION), to_string(ifc),when);
 	
 	bool olf_reset =  frame.data[4] & 0x10;
-	db->updateValue(schemaKeyForValueKey(OLF_RESET), to_string(olf_reset),when, eTag);
+	db->updateValue(schemaKeyForValueKey(OLF_RESET), to_string(olf_reset),when);
 };
 
-void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when){
 
 	float fan = frame.data[5] / 255.0;
-	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string(fan),when, eTag);
+	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string(fan),when);
 
 	float oilLife = frame.data[6] / 255.0;
-	db->updateValue(schemaKeyForValueKey(OLF), to_string(oilLife),when, eTag);
+	db->updateValue(schemaKeyForValueKey(OLF), to_string(oilLife),when);
 
 	
 };
 
-void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
-	float oilpress =  (frame.data[2] * 4);
-	db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when, eTag);
+void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when){
+	
+	
+	bitset<8> byte0 = frame.data[0];
+	bitset<8> byte3 = frame.data[3];
+	bitset<8> byte6 = frame.data[6];
+ 
+	
+	if(byte0.test(6)){ //Engine Oil Pressure Validity
+		float oilpress =  (frame.data[2] * 4);
+		db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when);
+	}
+	
+	if(byte0.test(7)){ //Engine Oil Temperature Validity
+		float oiltemp =  (frame.data[1] - 40);
+		db->updateValue(schemaKeyForValueKey(TEMP_OIL), to_string(oiltemp),when);
+	}
+	
+	bool oilLow =  byte0.test(4);
+	db->updateValue(schemaKeyForValueKey(GM_OIL_LOW), to_string(oilLow),when);
 
-	float oiltemp =  (frame.data[1] - 40);
-	db->updateValue(schemaKeyForValueKey(TEMP_OIL), to_string(oiltemp),when, eTag);
+	bool changeOil =  byte0.test(3);
+	db->updateValue(schemaKeyForValueKey(GM_CHANGE_OIL), to_string(changeOil),when);
 
+	bool reducedPower = byte3.test(7);
+	db->updateValue(schemaKeyForValueKey(GM_REDUCED_POWER), to_string(reducedPower),when);
 
+	bool checkFuelCap = byte3.test(5);
+	db->updateValue(schemaKeyForValueKey(GM_CHECK_FUELCAP), to_string(checkFuelCap),when);
+
+	bool checkEngine = byte6.test(2);
+	db->updateValue(schemaKeyForValueKey(GM_CHECK_ENGINE), to_string(checkEngine),when);
 };
 
 
 
-void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processFuelSystemRequest2(FrameDB* db, can_frame_t frame, time_t when){
 	bool mafValid =  frame.data[0] & 0x80;
 
 	if(mafValid){
 		float maf =  ((frame.data[2])  <<8 | frame.data[3]) * 0.01;
-		db->updateValue(schemaKeyForValueKey(MASS_AIR_FLOW), to_string(maf),when, eTag);
+		db->updateValue(schemaKeyForValueKey(MASS_AIR_FLOW), to_string(maf),when);
 
 	}
 
 
 };
 
-void GMLAN::processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processEngineGenStatus4(FrameDB* db, can_frame_t frame, time_t when){
 
+	
 	float baro		= 	(frame.data[1]  / 2.0);
-	db->updateValue(schemaKeyForValueKey(BAROMETRIC_PRESSURE), to_string(baro),when, eTag);
+	db->updateValue(schemaKeyForValueKey(BAROMETRIC_PRESSURE), to_string(baro),when);
  
 	float coolTemp = 	frame.data[2];
-	db->updateValue(schemaKeyForValueKey(TEMP_COOLANT), to_string(coolTemp),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_COOLANT), to_string(coolTemp),when);
 
 	float airIn 	=	frame.data[3];
-	db->updateValue(schemaKeyForValueKey(TEMP_AIR_INTAKE), to_string(airIn),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_AIR_INTAKE), to_string(airIn),when);
 
 	float airAmb =  	(frame.data[4] *.5);
-	db->updateValue(schemaKeyForValueKey(TEMP_AIR_AMBIENT), to_string(airAmb),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_AIR_AMBIENT), to_string(airAmb),when);
 
 };
 
-void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t when){
 
 	bool gearValid =  !(frame.data[0] & 0x10);
 
@@ -367,40 +404,40 @@ void GMLAN::processTransmissionStatus2(FrameDB* db, can_frame_t frame, time_t wh
 			"P"
 		};
 		
-		db->updateValue(schemaKeyForValueKey(TRANS_GEAR), gearCode[gear] ,when, eTag);
+		db->updateValue(schemaKeyForValueKey(TRANS_GEAR), gearCode[gear] ,when);
 
 	}
 };
 
-void GMLAN::processTransmissionStatus3(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processTransmissionStatus3(FrameDB* db, can_frame_t frame, time_t when){
 	float transTemp =  frame.data[1];
-	db->updateValue(schemaKeyForValueKey(TEMP_TRANSMISSION), to_string(transTemp),when, eTag);
+	db->updateValue(schemaKeyForValueKey(TEMP_TRANSMISSION), to_string(transTemp),when);
 
 };
 
 
 
-void GMLAN::processPlatformConfiguration(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processPlatformConfiguration(FrameDB* db, can_frame_t frame, time_t when){
 
 };
 
-void GMLAN::processTransOutRotation(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processTransOutRotation(FrameDB* db, can_frame_t frame, time_t when){
 
 };
 
-void GMLAN::processVehicleSpeed(FrameDB* db, can_frame_t frame, time_t when, eTag_t eTag){
+void GMLAN::processVehicleSpeed(FrameDB* db, can_frame_t frame, time_t when){
 	
 	bool speedValid = (frame.data[0] & 0x80) == 0x00;
 //	bool distValid = (frame.data[2] & 0x40) == 0x00;
 
 	if(speedValid) {
 		float speed	= (((frame.data[0] & 0x7F) <<8)  | frame.data[1]) * 0.015625;
-		db->updateValue(schemaKeyForValueKey(VEHICLE_SPEED), to_string(speed),when, eTag);
+		db->updateValue(schemaKeyForValueKey(VEHICLE_SPEED), to_string(speed),when);
 	}
 	
 //	if(distValid) {
 //		float dist	= (((frame.data[2] & 0x1F) <<8)  | frame.data[3]) / 8;
-//		db->updateValue(_value_key_map[dist], to_string(speed),when, eTag);
+//		db->updateValue(_value_key_map[dist], to_string(speed),when);
 //
 //	}
 };

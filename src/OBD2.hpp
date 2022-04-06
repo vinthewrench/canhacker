@@ -19,13 +19,13 @@ public:
 	virtual void registerSchema(FrameDB*);
 
 	virtual void reset();
-	virtual void processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when, eTag_t eTag);
+	virtual void processFrame(FrameDB* db,string ifName, can_frame_t frame, time_t when);
 
 	virtual string descriptionForFrame(can_frame_t frame);
   
 private:
 	
-	void processOBDResponse(FrameDB* db,time_t when, eTag_t eTag,
+	void processOBDResponse(FrameDB* db,time_t when,
 									canid_t can_id,
 									uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data);
 			 

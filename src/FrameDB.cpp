@@ -22,6 +22,7 @@ static inline void  splitFrameTag(frameTag_t fTag, ifTag_t * ifTag, canid_t *can
 
 FrameDB::FrameDB(){
 	_lastEtag = 0;
+	_lastValueEtag = 0;
 	_lastInterfaceTag = 0;
 	_interfaces.clear();
 	_schema.clear();
@@ -165,6 +166,7 @@ void FrameDB::clearFrames(string ifName){
 		}
 	}
 	_lastEtag = 0;
+	_lastValueEtag = 0;
 }
 
  
@@ -259,7 +261,7 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
 	// tell the protocols something changed
  	if(isNew || (changed.count() > 0))
 		for(auto proto : *theProtocols ){
-			proto->processFrame(this, ifName, frame, now, _lastEtag );
+			proto->processFrame(this, ifName, frame, now );
 		};
 	
 }
@@ -371,15 +373,26 @@ int FrameDB::valuesCount() {
 }
 
 
-void FrameDB::updateValue(string_view key, string value, time_t when,  eTag_t eTag){
-	
-// 	cntr++;
-	
+void FrameDB::updateValue(string_view key, string value, time_t when){
+ 
 	if(when == 0)
 		when = time(NULL);
 
-	_values[key] = {when, eTag, value};
+	bool shouldUpdate = true;
+	
+	// filter out noise.
+	if(_values.count(key)){
+		auto lastValue = _values[key];
+		
+		if( lastValue.value == value)
+			shouldUpdate = false;
+	}
+	
+	if(shouldUpdate)
+		_values[key] = {when, _lastValueEtag++, value};
 }
+
+
 
 vector<string_view> FrameDB::allValueKeys(){
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -395,7 +408,7 @@ vector<string_view> FrameDB::allValueKeys(){
 }
   
 
-vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag){
+vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *eTagOut){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 	vector<string_view> keys = {};
@@ -404,6 +417,9 @@ vector<string_view> FrameDB::valuesUpdateSinceEtag(eTag_t eTag, eTag_t *newEtag)
 		if(value.eTag <= eTag)
 			keys.push_back(key);
 	}
+
+	if(eTagOut)
+		*eTagOut = _lastValueEtag;
 
 	return keys;
 };

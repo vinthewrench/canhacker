@@ -233,6 +233,20 @@ static void printValue(int line, bool isUpdated, bool isOld, string_view key){
 				p += sprintf(p, "%0.2f%%",  temp);
 			}
 				break;
+				
+			case FrameDB::DATA:
+			{
+				size_t len = value.size()/2;
+				p += sprintf(p, "[%ld]", len);
+				const char* str = value.c_str();
+				
+				len = len > 16?16:len;
+				for(int i = 0; i < len; i+=2){
+					p += sprintf(p," %c%c", str[i], str[i+1]);
+				}
+ 			}
+ 
+				break;
 
 			default:
 				p += sprintf(p, "%s", value.c_str());
@@ -264,9 +278,16 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 	FrameDB* frameDB = FrameDB::shared();
 	time_t now = time(NULL);
 
+	
+	eTag_t newEtag = 0;
+ 
+	if(redraw) {
+		_lastValueEtag = 0;
+	};
+
 	auto allKeys = frameDB->allValueKeys();
 	auto old_keys = frameDB->valuesOlderthan(now - 5);
-	auto updated_keys = frameDB->valuesUpdateSinceEtag(_lastEtag, NULL);
+	auto updated_keys = frameDB->valuesUpdateSinceEtag(_lastValueEtag, &newEtag);
  
 	if(redraw){
 		printf("\x1b[%d;0H\x1b[0J", lastLine );// erase till end of line
@@ -304,6 +325,8 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 			printValue(line, isUpdated, isOld, key);
 			}
 	}
+	
+	_lastValueEtag	= newEtag;
 }
 
 void FrameDumper::printHeaderLine(){
