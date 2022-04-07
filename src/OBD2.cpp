@@ -46,6 +46,11 @@ static map<uint32_t, valueSchema_t> _service9schemaMap ={
 };
 
 
+static map<uint8_t, valueSchema_t> _otherServiceSchemaMap = {
+	{ 3 , { "OBD_DTC_STORED", "Stored Diagnostic Trouble Codes", FrameDB::DTC}},
+	{ 7 , { "OBD_DTC_PENDING", "Pending Diagnostic Trouble Codes", FrameDB::DTC}},
+};
+
 static map<uint32_t,  valueSchema_t> _schemaMap =
 {
 	{ 0x00,		{"OBD_PIDS_A",	"Supported PIDs [01-20]",	FrameDB::DATA}},
@@ -75,7 +80,7 @@ static map<uint32_t,  valueSchema_t> _schemaMap =
 	{ 0x10,	{"OBD_MAF",	"Air Flow Rate (MAF)",	FrameDB::GPS}},
 	{ 0x11,	{"OBD_THROTTLE_POS",	"Throttle Position",	FrameDB::PERCENT}},
 	{ 0x12,	{"OBD_AIR_STATUS",	"Secondary Air Status",	FrameDB::STRING}},
-	{ 0x13,	{"OBD_O2_SENSORS",	"O2 Sensors Present",	FrameDB::SPECIAL}},
+	{ 0x13,	{"OBD_O2_SENSORS",	"O2 Sensors Present",	FrameDB::BINARY}},
 	{ 0x14,	{"OBD_O2_B1S1",	"O2: Bank 1 - Sensor 1 Voltage",	FrameDB::VOLTS}},
 	{ 0x15,	{"OBD_O2_B1S2",	"O2: Bank 1 - Sensor 2 Voltage",	FrameDB::VOLTS}},
 	{ 0x16,	{"OBD_O2_B1S3",	"O2: Bank 1 - Sensor 3 Voltage",	FrameDB::VOLTS}},
@@ -245,6 +250,11 @@ void OBD2::registerSchema(FrameDB* db){
 		valueSchema_t*  schema = &it->second;
 		db->addSchema(schema->title,  {schema->title, schema->description, schema->units});
 	}
+	
+	for (auto it = _otherServiceSchemaMap.begin(); it != _otherServiceSchemaMap.end(); it++){
+		valueSchema_t*  schema = &it->second;
+		db->addSchema(schema->title,  {schema->title, schema->description, schema->units});
+	}
 }
 
 void OBD2::reset() {
@@ -357,6 +367,59 @@ static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid,
 			case 0x9:  //FUEL_TRIM
 				value = to_string(  (data[0] * (100.0/128.0)) - 100. ) ;
 				break;
+			
+			case 0x04:	// Calculated engine load
+			case 0x11:	// Throttle position
+			case 0x2C:	//Commanded EGR
+			case 0x2E:  // Commanded evaporative purge
+			case 0x2F:  //Fuel Tank Level Input
+			case 0x45:	// Relative throttle position
+			case 0x47:	// Absolute throttle position B
+			case 0x48:	// Absolute throttle position C
+			case 0x49:	// Accelerator pedal position D
+			case 0x4A:	// Accelerator pedal position E
+			case 0x4B:	// Accelerator pedal position F
+			case 0x4C://  Commanded throttle actuator
+			case 0x52:// 	Ethanol fuel %
+			case 0x5A:// 	Relative accelerator pedal position
+			case 0x5B:// 	 Hybrid battery pack remaining life
+				value = to_string(data[0] * (100.0/255.0)) ;
+				break;
+	
+			case 0x3C:	// Catalyst Temperature: Bank 1, Sensor 1
+			case 0x3D:	// Catalyst Temperature: Bank 2, Sensor 1
+			case 0x3E:	// Catalyst Temperature: Bank 1, Sensor 2
+			case 0x3F:	// Catalyst Temperature: Bank 2, Sensor 2
+			case 0x7C:	// Diesel Particulate filter (DPF) temperature
+				value = to_string( (((data[0] <<8 )| data[1]) / 10.00) -40) ;
+			break;
+
+			case 0x14:	// Oxygen Sensor 1 Voltage
+			case 0x15:	// Oxygen Sensor 2 Voltage
+			case 0x16:	// Oxygen Sensor 3 Voltage
+			case 0x17:	// Oxygen Sensor 4 Voltage
+			case 0x18:	// Oxygen Sensor 5 Voltage
+			case 0x19:	// Oxygen Sensor 6 Voltage
+			case 0x1A:	// Oxygen Sensor 7 Voltage
+			case 0x1B:	// Oxygen Sensor 8 Voltage
+				value = to_string(data[0] /200.) ;
+				break;
+
+				
+				
+			case 0x34 ://Oxygen Sensor 1 Air-Fuel Equivalence Ratio
+			case 0x35 ://Oxygen Sensor 2 Air-Fuel Equivalence Ratio
+			case 0x36 ://Oxygen Sensor 3 Air-Fuel Equivalence Ratio
+			case 0x37 ://Oxygen Sensor 4 Air-Fuel Equivalence Ratio
+			case 0x38 ://Oxygen Sensor 5 Air-Fuel Equivalence Ratio
+			case 0x39 ://Oxygen Sensor 6 Air-Fuel Equivalence Ratio
+			case 0x3A ://Oxygen Sensor 7 Air-Fuel Equivalence Ratio
+			case 0x3B ://Oxygen Sensor 8 Air-Fuel Equivalence Ratio
+			case 0x44 ://Commanded Air-Fuel Equivalence Ratio
+				
+				value = to_string( (((data[0] <<8 )| data[1]) <<1 ) /  65536.) ;
+				break;
+				
 			default: break;
 		}
 	}
@@ -394,6 +457,21 @@ static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid,
 	if(schema->units	 == FrameDB::DATA){
 		value = hexStr(data, len);
 	}
+	else if(schema->units	 == FrameDB::DTC){
+		static char codechar[4] = {'P', 'C', 'B', 'U'};
+		
+	for( int i = 0; i < len; i +=2){
+			string DTC;
+			if( len - 2 < 0 ) break;	// error check for short packets
+			DTC = string(1, codechar[data[i] >> 6]) ;	 // the upper 2 bits of the first byte
+			DTC+=	to_string((data[i] >> 6) & 0b0011);
+			DTC+=	to_string(data[i] & 0xf);
+			DTC+=	to_string(data[i+1] >> 4 );
+			DTC+=	to_string(data[i+1] & 0xf);
+			value += DTC + " ";
+		}
+	}
+
 	
 	if(value.empty()){
 		switch(len){
@@ -439,6 +517,14 @@ void OBD2::processOBDResponse(FrameDB* db,time_t when,
 			
 		case 4: // clear diag codes?
 			break;
+			
+		case 3: // Show stored Diagnostic Trouble Codes
+			schema =  &_otherServiceSchemaMap[3];
+		break;
+			
+		case 7: // Show pending Diagnostic Trouble Codes
+			schema =  &_otherServiceSchemaMap[7];
+		break;
 			
 		case 9:
 		{

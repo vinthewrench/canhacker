@@ -292,7 +292,7 @@ void GMLAN::processEngineGenStatus1(FrameDB* db, can_frame_t frame, time_t when)
  };
 
 void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when){
-	float tPos = frame.data[1]/255.0;
+	float tPos = (frame.data[1] * 100)/255.0;
 	db->updateValue(schemaKeyForValueKey(THROTTLE_POS), to_string(tPos),when);
 
 	float ifc =  ((frame.data[4] & 3)  <<8 | frame.data[5]) * 0.025 ;
@@ -304,10 +304,10 @@ void GMLAN::processEngineGenStatus2(FrameDB* db, can_frame_t frame, time_t when)
 
 void GMLAN::processEngineGenStatus3(FrameDB* db, can_frame_t frame, time_t when){
 
-	float fan = frame.data[5] / 255.0;
+	float fan = (frame.data[5]* 100) / 255.0;
 	db->updateValue(schemaKeyForValueKey(FAN_SPEED), to_string(fan),when);
 
-	float oilLife = frame.data[6] / 255.0;
+	float oilLife = (frame.data[6]* 100) / 255.0;
 	db->updateValue(schemaKeyForValueKey(OLF), to_string(oilLife),when);
 
 	

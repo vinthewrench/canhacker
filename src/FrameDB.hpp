@@ -97,6 +97,7 @@ class FrameDB {
 		FUEL_TRIM,		//
 		NM,				// Newton Meters
 		DATA,				// DATA block
+		DTC,				// DTC codes 4 bytes each
 		SPECIAL,
 		IGNORE,
 		UNKNOWN,

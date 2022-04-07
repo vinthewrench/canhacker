@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4227F76EEA00C0CBB1 /* OLF.log */; };
+		2E645E4727FE456900C0CBB1 /* pids.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4627FE455D00C0CBB1 /* pids.log */; };
+		2E645E4927FE863000C0CBB1 /* dtc.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4827FE858A00C0CBB1 /* dtc.log */; };
 		2EFC242827E926DC00DB9D1F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC242527E926DC00DB9D1F /* main.cpp */; };
 		2EFC244927E92B2200DB9D1F /* CmdLineBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244127E92B2200DB9D1F /* CmdLineBuffer.cpp */; };
 		2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */; };
@@ -39,6 +41,8 @@
 				2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */,
 				2EFC249427EE8EAA00DB9D1F /* t0.log in CopyFiles */,
 				2EFC249227EE7F2E00DB9D1F /* jeep1.log in CopyFiles */,
+				2E645E4927FE863000C0CBB1 /* dtc.log in CopyFiles */,
+				2E645E4727FE456900C0CBB1 /* pids.log in CopyFiles */,
 				2EFC249627F0DF6B00DB9D1F /* vin.log in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -48,6 +52,8 @@
 /* Begin PBXFileReference section */
 		2E10F55D27F380170042DF1A /* libunwind.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libunwind.tbd; path = usr/lib/system/libunwind.tbd; sourceTree = SDKROOT; };
 		2E645E4227F76EEA00C0CBB1 /* OLF.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = OLF.log; sourceTree = "<group>"; };
+		2E645E4627FE455D00C0CBB1 /* pids.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = pids.log; sourceTree = "<group>"; };
+		2E645E4827FE858A00C0CBB1 /* dtc.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = dtc.log; sourceTree = "<group>"; };
 		2EFC241727E926AF00DB9D1F /* canhacker */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = canhacker; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EFC242527E926DC00DB9D1F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = src/main.cpp; sourceTree = "<group>"; };
 		2EFC242B27E926F300DB9D1F /* can_raw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = can_raw.h; path = macincludes/can_raw.h; sourceTree = "<group>"; };
@@ -178,8 +184,10 @@
 				2EFC246327EA292100DB9D1F /* chevy1.log */,
 				2EFC247A27ECC67300DB9D1F /* jeep.log */,
 				2EFC249127EE7F1F00DB9D1F /* jeep1.log */,
+				2E645E4627FE455D00C0CBB1 /* pids.log */,
 				2EFC249327EE8EA300DB9D1F /* t0.log */,
 				2E645E4227F76EEA00C0CBB1 /* OLF.log */,
+				2E645E4827FE858A00C0CBB1 /* dtc.log */,
 				2EFC249527F0DF6100DB9D1F /* vin.log */,
 			);
 			path = CANFiles;
@@ -386,6 +394,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = PDXWT4JFG9;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -403,6 +412,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = PDXWT4JFG9;
 				ENABLE_HARDENED_RUNTIME = YES;

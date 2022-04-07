@@ -8,6 +8,8 @@
 #include "FrameDumper.hpp"
 #include <unistd.h>
 #include <sys/time.h>
+#include <sstream>
+
 
 #define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
 
@@ -229,24 +231,34 @@ static void printValue(int line, bool isUpdated, bool isOld, string_view key){
 				
 			case	FrameDB::PERCENT:
 			{
-				float temp = stof(value) * 100.0;
+				float temp = stof(value);
 				p += sprintf(p, "%0.2f%%",  temp);
 			}
 				break;
 				
 			case FrameDB::DATA:
 			{
-				size_t len = value.size()/2;
-				p += sprintf(p, "[%ld]", len);
+				size_t len = value.size();
+				p += sprintf(p, "[%zd]", len/2);
 				const char* str = value.c_str();
 				
-				len = len > 16?16:len;
+				len = len > 32?32:len;
 				for(int i = 0; i < len; i+=2){
 					p += sprintf(p," %c%c", str[i], str[i+1]);
 				}
  			}
- 
+ 				break;
+				
+			case FrameDB::DTC:
+			{
+				std::stringstream stream(value);
+				auto count = std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
+				p += sprintf(p, "DTC [%zd] " , count );
+				p += sprintf(p, "%s", value.c_str());
+				
+			}
 				break;
+				
 
 			default:
 				p += sprintf(p, "%s", value.c_str());

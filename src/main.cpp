@@ -130,13 +130,21 @@ static bool OBDCmdHandler( stringvector 		line,
 		else if(cmdStr == "ecu"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x09, 0x0A}, &errnum);
 		}
-		else if(cmdStr == "pids1"){
+		else if(cmdStr == "pids"){
+			
+			for(uint8_t i = 0; i < 0xC0; i++){
+				success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, i }, &errnum);
+				if(!success) break;
+				usleep(500);
+			}
+		}
+		else if(cmdStr == "pid1"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
-		else if(cmdStr == "pids2"){
+		else if(cmdStr == "pid2"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
-		else if(cmdStr == "pids3"){
+		else if(cmdStr == "pid3"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
 		else if(cmdStr == "volts"){
