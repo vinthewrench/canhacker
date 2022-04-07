@@ -133,9 +133,9 @@ static bool OBDCmdHandler( stringvector 		line,
 		else if(cmdStr == "pids"){
 			
 			for(uint8_t i = 0; i < 0xC0; i++){
-				success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, i }, &errnum);
+				success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, i, 0x00, 0x00, 0x00, 0x00, 0x00 }, &errnum);
 				if(!success) break;
-				usleep(500);
+				usleep(1000);
 			}
 		}
 		else if(cmdStr == "pid1"){
