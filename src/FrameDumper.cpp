@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sstream>
+#include  <iterator>
 
 
 #define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
