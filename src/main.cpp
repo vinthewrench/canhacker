@@ -26,10 +26,14 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include <iostream>
+#include <filesystem> // C++17
 
 #include <execinfo.h>
 #include <cassert>
 #include <regex>
+
+namespace fs = std::filesystem;
 
 using namespace std;
 
@@ -150,9 +154,6 @@ static bool OBDCmdHandler( stringvector 		line,
 		else if(cmdStr == "volts"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
-		else if(cmdStr == "fuel"){
-			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x2F, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
-		}
 		else if(cmdStr == "clearDTC"){
 			success = canBus->sendFrame(portStr, can_id, {0x04}, &errnum);
 		}
@@ -261,34 +262,62 @@ static bool SNIFFCmdHandler( stringvector line,
 static bool READCmdHandler( stringvector line,
 										CmdLineMgr* mgr,
 									boolCallback_t	cb){
-	string fileName;
+	fs::path filePath;
+	
 	string errorStr;
 	string command = line[0];
 	int  errnum = 0;
+	bool nodelay = false;
+	bool shouldFilterNoise = false;
 	
 	CANBusMgr*	canBus = CANBusMgr::shared();
 	
 	if(line.size() > 1)
-		fileName = line[1];
+		filePath = line[1];
 	
-	
-	if(fileName.empty()) {
+	for(int i = 2; i < line.size(); i++){
+			if(line[i] == "nodelay")
+				nodelay = true;
+			else if(line[i] == "filter")
+				shouldFilterNoise = true;
+		}
+  
+
+	if(filePath.empty()) {
 		errorStr =  "Command: \x1B[36;1;4m"  + command + "\x1B[0m expects a filename.";
 	}
 	else {
+		
+		if(filePath.extension().empty()) {
+			filePath.replace_extension("log");
+		}
+	 
 		FrameDB::shared()->clearFrames();
 		FrameDB::shared()->clearValues();
 		
 		(cb)(true);
 		
+		if(shouldFilterNoise){
+			dumper.setFilters({ {"can0",0x219},		// VIN Number
+										{"can0", 0x3E6},	// Clock Time Display
+											{"can0", 0x217},	//??
+											{"can0", 0x214},	//??
+												{"can0", 0x514},
+				
+									} );
+		}
+		else {
+			dumper.setFilters({});
+		}
+	 
 		dumper.start();
-		bool success =  canBus->readFramesFromFile(fileName, &errnum,
+		bool success =  canBus->readFramesFromFile(filePath.string(), nodelay,  &errnum,
 																 [=] () {
 			// callback when done.
 			dumper.stop();
 			mgr->sendReply( "\r\n");
 			(cb)(true);
-			fflush(stdout);
+//			fflush(stdout);
 			});
 		
 		if(success){
@@ -296,7 +325,7 @@ static bool READCmdHandler( stringvector line,
 		}
 		else {
 			errorStr = "Failed to read from \x1B[36;1;4m"
-			+ fileName + "\x1B[0m, " + string(strerror(errnum)) + " \r\n";
+			+ filePath.string() + "\x1B[0m, " + string(strerror(errnum)) + " \r\n";
 			mgr->sendReply(errorStr);
 			(cb)(false);
 			
@@ -332,10 +361,14 @@ void registerCommandsLineFunctions() {
  
 
 int main(int argc, const char * argv[]) {
-	
+
+	static const uint8_t CHAR_CNTL_X     	 = 0x18;		// Interrupt
+	static const uint8_t CHAR_CNTL_S    	 = 0x13;		// Pause
+	static const uint8_t CHAR_CNTL_Q     	 = 0x11;		// Resume
+
 	std::set_terminate( handler );
 
-	fflush(stdout);
+//	fflush(stdout);
   printf("\x1b[0;0H\x1b[2J");
   printf("Can Hacker!\r\n");
 
@@ -375,27 +408,37 @@ int main(int argc, const char * argv[]) {
  //		tty_opts_raw.c_iflag &= ~(IGNBRK);
 	
 
-		tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_raw);
+ 		tcsetattr(STDIN_FILENO, TCSANOW, &tty_opts_raw);
  
 		//	struct winsize ws;
 		//	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0  || ws.ws_col > 0) {
 		//		printf("col : %d, rows: %hu \n\r",ws.ws_col,ws.ws_row);
 		//		}
 		
-		cmdLineMgr.start([=](CmdLineMgr* cmd) {
+		cmdLineMgr.start([=](CmdLineMgr* cmd, uint8_t ch) {
 			
 			CANBusMgr*	canBus = CANBusMgr::shared();
-			canBus->quitReading();
 			
-			dumper.stop();
-	//		printf("Stopped...\r\n");
-			cmd->reset();
-		
+			if(ch == CHAR_CNTL_X) {
+				canBus->quitReading();
+				dumper.stop();
+				cmd->reset();
+ 			}
+			else if(ch == CHAR_CNTL_Q) {
+				canBus->resumeReading();
+				dumper.resume();
+	
+			} else if(ch == CHAR_CNTL_S) {
+				canBus->pauseReading();
+				dumper.pause();
+			}
+			
 		});
 		
 		while(cmdLineMgr.isRunning()){
 			int c = getchar();
-			cmdLineMgr.processChar(c);
+			if(c >= 0 )
+				cmdLineMgr.processChar(c);
 		}
 	 
 		// Restore previous TTY settings

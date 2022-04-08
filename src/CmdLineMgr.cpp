@@ -32,18 +32,17 @@ void CmdLineMgr::stop(){
  }
 
 
-// CHAR_CNTL_C was typed
-void CmdLineMgr::interrupt(){
+// special CHAR_CNTL was typed
+void CmdLineMgr::deviceControl(uint8_t c){
 	if(_interruptCallback) {
-		_interruptCallback(this);
+		_interruptCallback(this, c);
 	}
 	else {
 		stop();
 	}
 	
 }
-
-
+ 
 void  CmdLineMgr::clear(){
 	_cmdLineBuffer.clear();
 }

@@ -18,7 +18,7 @@ using namespace std;
 class FrameDumper {
 	
 public:
-
+	typedef  pair<string, canid_t> filter_t;
 	
 	typedef  enum  {
 		 NONE,
@@ -32,11 +32,16 @@ public:
 	
 	void start(string ifName = string());
 	void stop();
-	
+	void pause();
+	void resume();
+
 	void setDumpMode(dump_mode_t mode);
 	dump_mode_t getDumpMode(){ return _mode;};
 
- 
+	void setFilters(vector<filter_t> canIds);
+	vector<filter_t> getFilters() {return _filters;};
+
+
 private:
 	void run();
 
@@ -46,6 +51,8 @@ private:
 	
 	std::thread  	_thread;		 //Internal thread, this is in order to start and stop the thread from
 	bool 				_running;	 //Flag for starting and terminating the main loop
+	bool 				_paused;
+
 	bool 				_didStop;		// when loop is done
 	string 			_ifName;
 
@@ -53,7 +60,11 @@ private:
 
 	dump_mode_t		_mode;
 	dump_mode_t 	_lastmode;
-
+	
+	vector< filter_t> _filters;		//  {can0,0x219}
+	
+	unsigned long 	_firstTimeStamp;
+	unsigned long 	_lastTimeStamp;
 	eTag_t 			_lastEtag;
 	eTag_t 			_lastValueEtag;
 

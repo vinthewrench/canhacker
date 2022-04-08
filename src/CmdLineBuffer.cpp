@@ -126,9 +126,11 @@ void CmdLineBuffer::processChar(uint8_t ch){
 		_clMgr->quit();
 		return;
 	}
-
-	if(ch == CHAR_CNTL_X){
-		_clMgr->interrupt();
+	
+	if( (ch == CHAR_CNTL_X)
+		|| (ch == CHAR_CNTL_S)
+		|| (ch == CHAR_CNTL_Q)){
+		_clMgr->deviceControl(ch);
 		return;
 	}
 	

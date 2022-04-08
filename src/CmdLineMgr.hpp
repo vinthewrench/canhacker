@@ -20,7 +20,7 @@ using namespace std;
 
 class CmdLineMgr;
 
-typedef std::function<void(CmdLineMgr *)> cmdLineMgrCallback_t;
+typedef std::function<void(CmdLineMgr *, uint8_t ch)> cmdLineMgrCallback_t;
 
 class CmdLineMgr:  public CmdLineBufferManager {
 
@@ -38,13 +38,13 @@ public:
 	void processChar(uint8_t c);
 	void processChars(uint8_t* data, size_t len);
 
-
 	// calls from CmdLineBufferManager
 	virtual bool processCommandLine(std::string cmdLine, boolCallback_t cb);
 	virtual stringvector matchesForCmd(const std::string cmd);
-	virtual void interrupt();
 	virtual void quit() { stop(); };
 	
+	virtual void deviceControl(uint8_t c);
+ 
 	void sendReply(std::string reply);
 	
 

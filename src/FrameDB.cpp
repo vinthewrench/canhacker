@@ -170,7 +170,7 @@ void FrameDB::clearFrames(string ifName){
 }
 
  
-void  FrameDB::saveFrame(string ifName, can_frame_t frame, long timeStamp){
+void  FrameDB::saveFrame(string ifName, can_frame_t frame, unsigned long  timeStamp){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 
@@ -332,7 +332,7 @@ vector<frameTag_t>  	FrameDB::framesOlderthan(string ifName, time_t time){
 	return tags;
 }
 
-bool FrameDB::frameWithTag(frameTag_t tag, frame_entry *frameOut){
+bool FrameDB::frameWithTag(frameTag_t tag, frame_entry *frameOut, string *ifNameOut){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 	
@@ -353,6 +353,9 @@ bool FrameDB::frameWithTag(frameTag_t tag, frame_entry *frameOut){
 			if(frameOut){
 				auto e = theFrames->find(can_id);
 				*frameOut =  e->second;
+				
+				if(ifNameOut)
+					*ifNameOut = info->ifName;
 				return true;
 			}
  		}

@@ -23,8 +23,9 @@ class  CmdLineBufferManager {
  
 public:
 	virtual ~CmdLineBufferManager() {};
-	virtual void interrupt()  = 0;
 	virtual void quit()  = 0;
+	virtual void deviceControl(uint8_t c) =0;
+ 
 
 	virtual void sendReply(const std::string) = 0;
 	virtual bool processCommandLine(std::string cmdLine, boolCallback_t completion) = 0;
@@ -81,6 +82,9 @@ public:
 	static const uint8_t CHAR_CNTL_C     	 = 0x03;		// Quit
 	static const uint8_t CHAR_CNTL_X     	 = 0x18;		// Interrupt
 
+	static const uint8_t CHAR_CNTL_S    	 = 0x13;		// Pause
+	static const uint8_t CHAR_CNTL_Q     	 = 0x11;		// Resume
+	 
 	static const uint8_t CHAR_CNTL_A     	 = 0x01;		// begining of line
 	static const uint8_t CHAR_CNTL_E     	 = 0x05;		// end of line
 	static const uint8_t CHAR_CNTL_K     	 = 0x0B;		// delete till end

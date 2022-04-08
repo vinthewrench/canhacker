@@ -26,7 +26,7 @@ typedef uint64_t frameTag_t;		// < ifTag_t | canID>
 
 struct  frame_entry{
 	can_frame_t 	frame;
-	long				timeStamp;	// from canbus (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
+	unsigned long	timeStamp;	// from canbus (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
 	long				avgTime;		 // how often do we see these  ((now - lastTime) + avgTime) / 2
 	eTag_t 			eTag;
 	time_t			updateTime;
@@ -56,13 +56,13 @@ class FrameDB {
 	eTag_t lastEtag() { return  _lastEtag;};
  
 // Frame database
-	void saveFrame(string ifName, can_frame_t frame, long timeStamp);
+	void saveFrame(string ifName, can_frame_t frame, unsigned long timeStamp);
 	void clearFrames(string ifName = "");
 	
 	vector<frameTag_t> 	allFrames(string ifName);
 	vector<frameTag_t>  	framesUpdateSinceEtag(string ifName, eTag_t eTag, eTag_t *newEtag);
 	vector<frameTag_t>  	framesOlderthan(string ifName, time_t time);
-	bool 						frameWithTag(frameTag_t tag, frame_entry *frame);
+	bool 						frameWithTag(frameTag_t tag, frame_entry *frame, string *ifNameOut = NULL);
 	int						framesCount();
 
 // value Database

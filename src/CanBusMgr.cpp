@@ -55,6 +55,8 @@ CANBusMgr::~CANBusMgr(){
 	_max_fds = 0;
 	_running = false;
 	_reading = false;
+	_paused = false;
+	
 	
  if (_thread.joinable())
 		_thread.join();
@@ -202,25 +204,44 @@ done:
 	return false;
 }
 
+void CANBusMgr::pauseReading(){
+	if(isReadingFile() && !_paused){
+		_paused = true;
+	}
+}
 
-void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) {
+void CANBusMgr::resumeReading(){
+	if(isReadingFile() && _paused){
+		_paused = false;
+
+	}
+
+}
+
+
+void CANBusMgr::readFileThread(std::ifstream	*ifs, bool nodelay, voidCallback_t doneCallBack) {
 	
 //	std::ifstream	ifs;
 	FrameDB* frameDB = FrameDB::shared();
 	uint32_t number = 0;
 	string line;
-	struct timeval start_tv = {0,0};
 	
+	unsigned long lastTimestamp = 0;
+
 	try{
 		while (_reading && std::getline(*ifs, line) ) {
 			
-			number++;
+			while(_paused){
+				usleep(500);
+			};
+			if(!_reading) break;
 			
+			number++;
 			bool failed = false;
 			
 			struct can_frame frame;
 			struct timeval tv;
-			long timestamp = 0;
+			unsigned long timestamp = 0;
 			
 			const char *p = line.c_str() ;
 			int n;
@@ -236,12 +257,8 @@ void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) 
 						  &n) != 4) continue;
 			
 			tv.tv_usec = temp;
-			
-			if(number == 1){
-				start_tv = tv;
-			}
-			
-			timestamp = (tv.tv_sec - start_tv.tv_sec) * 100 + (tv.tv_usec / 10000);
+	 
+			timestamp = (tv.tv_sec * 100 ) + (tv.tv_usec / 10000);
 			p = p+n;
 			
 			frame.can_dlc = 0;
@@ -262,7 +279,21 @@ void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) 
 			}
 			if(!failed){
 				frameDB->saveFrame(string(canport), frame, timestamp);
-				usleep(500);
+				
+				if(nodelay){
+					usleep(500);
+				}
+				else {
+					unsigned long delay = timestamp - lastTimestamp;
+					if (delay <= 0)
+						usleep(500);
+					else
+						usleep(delay > 5000 ? 1000000: (int) delay * 10000);
+		 
+				}
+				if(timestamp> lastTimestamp)
+					lastTimestamp = timestamp;
+				
 			}
 		}
 	}
@@ -279,7 +310,7 @@ void CANBusMgr::readFileThread(std::ifstream	*ifs, voidCallback_t doneCallBack) 
 	
 
 
-bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut, voidCallback_t doneCallBack){
+bool CANBusMgr::readFramesFromFile(string filePath, bool nodelay, int *errorOut, voidCallback_t doneCallBack){
 	
 	
 	// are we already reading a file abort then,
@@ -310,7 +341,8 @@ bool CANBusMgr::readFramesFromFile(string filePath, int *errorOut, voidCallback_
 		
 		// start thread
 		_reading = true;
-		_thread1 = std::thread(&CANBusMgr::readFileThread,  this, ifs, doneCallBack);
+		_paused = false;
+		_thread1 = std::thread(&CANBusMgr::readFileThread,  this, ifs,nodelay, doneCallBack);
  		_thread1.detach();
  
 		statusOk = true;
@@ -349,15 +381,19 @@ void CANBusMgr::CANThread() {
 		/* check which fd is avaialbe for read */
 		for (auto& [ifName, fd]  : _interfaces) {
 			if ((fd != -1)  && FD_ISSET(fd, &dup)) {
-				time_t now =  time(NULL);
-				
+		 
+				struct timeval tv;
+				gettimeofday(&tv, NULL);
+	
+				unsigned long timestamp = (tv.tv_sec * 100 ) + (tv.tv_usec / 10000);
+ 
 				size_t nbytes = read(fd, &frame, sizeof(struct can_frame));
 				
 				if(nbytes == 0){ // shutdown
 					_interfaces[ifName] = -1;
 				}
 				else if(nbytes > 0){
-					frameDB->saveFrame(ifName, frame, now);
+					frameDB->saveFrame(ifName, frame, timestamp);
 				}
 			}
 		}

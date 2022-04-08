@@ -47,16 +47,22 @@ public:
 	bool start(string ifName,int *error = NULL);
 	bool stop(string ifName,int *error = NULL);
 
-	bool readFramesFromFile(string filePath, int *error = NULL,  voidCallback_t doneCallBack = NULL );
-	void quitReading() {_reading = false;};
+	bool readFramesFromFile(string filePath, bool nodelay = true,
+									int *error = NULL,
+									voidCallback_t doneCallBack = NULL );
+	
+	void quitReading() {_paused = false; _reading = false;};
 	bool isReadingFile(){ return _reading;};
 	
+	void pauseReading();
+	void resumeReading();
+
 	bool sendFrame(string ifName, canid_t can_id, vector<uint8_t> bytes,  int *error = NULL);
 	
 private:
 	
 
-	void readFileThread(std::ifstream *ifs, voidCallback_t doneCallBack);
+	void readFileThread(std::ifstream *ifs, bool nodelay, voidCallback_t doneCallBack);
 	std::thread  	_thread;		 //CANbus reading  thread,
 	bool 				_running;	 //Flag for starting and terminating the main loop
  
@@ -64,7 +70,8 @@ private:
 	void CANThread();
 	std::thread  	_thread1;	//thread,for reading a file
 	bool 				_reading;	// reading frames from file
-	
+	bool 				_paused;		 
+
 	int openSocket(string ifName, int *error = NULL);
 
 	map<string, int> _interfaces;

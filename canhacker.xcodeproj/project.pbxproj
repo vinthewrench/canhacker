@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E62A8292800F7D900F5066B /* unlock.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E62A8282800F7D400F5066B /* unlock.log */; };
 		2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4227F76EEA00C0CBB1 /* OLF.log */; };
 		2E645E4727FE456900C0CBB1 /* pids.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4627FE455D00C0CBB1 /* pids.log */; };
 		2E645E4927FE863000C0CBB1 /* dtc.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4827FE858A00C0CBB1 /* dtc.log */; };
@@ -40,6 +41,7 @@
 				2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */,
 				2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */,
 				2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */,
+				2E62A8292800F7D900F5066B /* unlock.log in CopyFiles */,
 				2E645E4C27FF8D2900C0CBB1 /* pids2.log in CopyFiles */,
 				2EFC249427EE8EAA00DB9D1F /* t0.log in CopyFiles */,
 				2EFC249227EE7F2E00DB9D1F /* jeep1.log in CopyFiles */,
@@ -53,6 +55,7 @@
 
 /* Begin PBXFileReference section */
 		2E10F55D27F380170042DF1A /* libunwind.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libunwind.tbd; path = usr/lib/system/libunwind.tbd; sourceTree = SDKROOT; };
+		2E62A8282800F7D400F5066B /* unlock.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = unlock.log; sourceTree = "<group>"; };
 		2E645E4227F76EEA00C0CBB1 /* OLF.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = OLF.log; sourceTree = "<group>"; };
 		2E645E4627FE455D00C0CBB1 /* pids.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = pids.log; sourceTree = "<group>"; };
 		2E645E4827FE858A00C0CBB1 /* dtc.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = dtc.log; sourceTree = "<group>"; };
@@ -137,8 +140,6 @@
 			children = (
 				2EFC248927EE30F900DB9D1F /* Protocols */,
 				2EFC242527E926DC00DB9D1F /* main.cpp */,
-				2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */,
-				2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */,
 				2EFC246727EA30C100DB9D1F /* FrameDB.hpp */,
 				2EFC246627EA30C100DB9D1F /* FrameDB.cpp */,
 				2EFC246B27EA7E6A00DB9D1F /* CanBusMgr.hpp */,
@@ -191,6 +192,7 @@
 				2E645E4B27FF8D1B00C0CBB1 /* pids2.log */,
 				2EFC249327EE8EA300DB9D1F /* t0.log */,
 				2E645E4227F76EEA00C0CBB1 /* OLF.log */,
+				2E62A8282800F7D400F5066B /* unlock.log */,
 				2E645E4827FE858A00C0CBB1 /* dtc.log */,
 				2EFC249527F0DF6100DB9D1F /* vin.log */,
 			);
@@ -207,6 +209,8 @@
 				2EFC247127EBCA6A00DB9D1F /* GMLAN.hpp */,
 				2EFC248427EE27DF00DB9D1F /* OBD2.cpp */,
 				2EFC248527EE27DF00DB9D1F /* OBD2.hpp */,
+				2EFC248127ECE25F00DB9D1F /* FrameDumper.cpp */,
+				2EFC248227ECE25F00DB9D1F /* FrameDumper.hpp */,
 			);
 			name = Protocols;
 			sourceTree = "<group>";

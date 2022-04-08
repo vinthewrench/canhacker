@@ -10,9 +10,42 @@
 #include <sys/time.h>
 #include <sstream>
 #include  <iterator>
+#include <iomanip>
 
+#include <vector>
+#include <algorithm>
 
 #define CAN_OBD_MASK 0x00000700U /* standard frame format (SFF) */
+
+static std::string timestampString (unsigned long timestamp){
+ 
+#define TS_PER_SEC  ((unsigned long)(100UL))
+#define SECS_PER_MIN  ((unsigned long)(60UL))
+#define SECS_PER_HOUR ((unsigned long)(3600UL))
+#define SECS_PER_DAY  ((unsigned long)(SECS_PER_HOUR * 24UL))
+
+	std::ostringstream oss;
+ 	long centiseconds  =  timestamp % TS_PER_SEC;
+	long seconds = 		(timestamp/ TS_PER_SEC ) % SECS_PER_MIN;
+	long minutes = 		(timestamp/(SECS_PER_MIN * TS_PER_SEC) ) % SECS_PER_HOUR;
+	long hours = 			(timestamp/(SECS_PER_HOUR * TS_PER_SEC)) % SECS_PER_DAY;
+	long days = 			(timestamp/(SECS_PER_DAY * TS_PER_SEC)) ;
+
+	if(days > 0)
+		oss  << setw(0) << days << " Days ";
+
+	if(hours > 0)
+		oss  << setw(0) << hours << ":";
+
+	oss  << setfill('0') << setw(2) << minutes
+				<< ":" <<  setfill('0') << setw(2)  << seconds
+				<< "." <<  setfill('0') << setw(2)  << centiseconds;
+
+	auto test = oss.str();
+	
+	return oss.str();
+}
+
 
 std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8> changed) {
 	
@@ -70,6 +103,7 @@ std::string hexDumpFrame(can_frame_t frame, bool isOld, bitset<8> changed) {
 FrameDumper::FrameDumper(){
 	_ifName = "";
 	_running = false;
+	_paused = false;
 	_didStop = false;
 	_lastValueLine = 0;
 	_lastFrameLine = 0;
@@ -78,7 +112,8 @@ FrameDumper::FrameDumper(){
 	_topOffset = 3;
 	_mode = BOTH;
 	_lastmode = _mode;
-	
+	_filters.clear();
+	_firstTimeStamp = ULONG_MAX;
 
 }
 FrameDumper::~FrameDumper(){
@@ -102,11 +137,14 @@ void FrameDumper::start(string ifName){
  
 	_lastValueLine = 0;
 	_lastFrameLine = 0;
+	_firstTimeStamp = ULONG_MAX;
+	
 	_frameLineMap.clear();
 	_valueLineMap.clear();
 	_lastEtag = 0;
 	_ifName = ifName;
-		
+	
+	_paused = false;
 	_running = true;
 	_didStop = false;
 	_thread = std::thread(&FrameDumper::run, this);
@@ -124,15 +162,38 @@ void FrameDumper::stop(){
 		_ifName = "";
  		printf("\x1b[?25h");
 		printf("\x1b[%d;0H ", _lastValueLine + 3);
-		fflush(stdout);
+//		fflush(stdout);
 	}
 }
+
+
+void FrameDumper::pause(){
+	if(_running && !_paused){
+		_paused = true;
+	}
+
+}
+
+void FrameDumper::resume(){
+	if(_running  && _paused){
+		_paused = false;
+	}
+
+}
+
 
 void FrameDumper::setDumpMode(dump_mode_t mode){
 	
 	std::lock_guard<std::mutex> lock(_mutex);
 	_mode = mode;
 }
+
+
+void FrameDumper::setFilters(vector<filter_t> canIds){
+	std::lock_guard<std::mutex> lock(_mutex);
+	_filters = canIds;
+}
+
 
 static float to_farenheit( float in){
 		return ((in * 1.8)  + 32.0);
@@ -303,7 +364,7 @@ void FrameDumper::printChangedValues(int lastLine, bool redraw){
 	auto updated_keys = frameDB->valuesUpdateSinceEtag(_lastValueEtag, &newEtag);
  
 	if(redraw){
-		printf("\x1b[%d;0H\x1b[0J", lastLine );// erase till end of line
+		printf("\x1b[%d;0H", lastLine );// erase till end of line
 		// redraw all values
 		_valueLineMap.clear();
 		_lastValueLine = lastLine + offset;
@@ -346,9 +407,16 @@ void FrameDumper::printHeaderLine(){
  
 	FrameDB* frameDB = FrameDB::shared();
 	 
-	printf("\x1b[%d;0H\x1b[2K", 0);
-	printf("\x1b[2K\t Totals can-ids:%-3d values:%-3d",
-			 frameDB->framesCount(), frameDB->valuesCount());
+	unsigned long diff = _lastTimeStamp - _firstTimeStamp;
+	
+	string tsStr = timestampString(diff);
+	
+	printf("\x1b[%d;0H", 0);
+	printf("\tTimestamp: %s Totals can-ids:%-3d values:%-3d  %s \x1b[0K",
+			 tsStr.c_str(),
+			 frameDB->framesCount(), frameDB->valuesCount(),
+			 _paused?"** PAUSED **":""
+			 );
 }
 
 void FrameDumper::printChangedFrames(string ifName, bool redraw){
@@ -362,7 +430,7 @@ void FrameDumper::printChangedFrames(string ifName, bool redraw){
 		_valueLineMap.clear();
 		_lastFrameLine = 0;
 		_lastValueLine = 0;
-				
+		_firstTimeStamp = ULONG_MAX;
 		printf("\x1b[0;0H\x1b[J\x1b[?25l");		// clear screen
 	}
 	
@@ -382,10 +450,17 @@ void FrameDumper::printChangedFrames(string ifName, bool redraw){
 	if(_mode == BOTH || _mode == FRAMES){
 		for(auto tag : new_tags){
 			frame_entry frame;
+			string interface;
+			
 			bool isOldFrame = find(old_tags.begin(), old_tags.end(), tag) != old_tags.end();
 			
-			if( frameDB->frameWithTag(tag, &frame)){
+			if( frameDB->frameWithTag(tag, &frame, &interface)){
 				
+				// skip on filter
+				if (std::find(_filters.begin(), _filters.end(), make_pair(interface, frame.frame.can_id)) != _filters.end())
+			  			continue;
+				
+					
 				int line = 0;
 				auto it =  _frameLineMap.find(tag);
 				if(it != _frameLineMap.end()) {
@@ -395,6 +470,13 @@ void FrameDumper::printChangedFrames(string ifName, bool redraw){
 					line = _lastFrameLine;
 					addedLines = true;
 				}
+				
+				if(_firstTimeStamp == ULONG_MAX){
+					_firstTimeStamp = frame.timeStamp;
+				}
+				
+				if(frame.timeStamp > _lastTimeStamp)
+					_lastTimeStamp = frame.timeStamp;
 				
 				long avgTime = abs(frame.avgTime);
 				if(avgTime > 99999) avgTime = 99999;
@@ -438,9 +520,19 @@ void FrameDumper::run() {
 	// clear screen
 	printf("\x1b[0;0H\x1b[J\x1b[?25l");
 
+	_lastTimeStamp = 0;
+
+	bool lastState = _paused;
+	
 	while(_running){
+	 
+		if(!_paused) printChangedFrames(_ifName);
 		
-		printChangedFrames(_ifName);
+		if(lastState  != _paused){
+			printHeaderLine();
+			lastState = _paused;
+		}
+
 		usleep(500);
 		}
 	
