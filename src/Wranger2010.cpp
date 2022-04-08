@@ -190,7 +190,7 @@ void Wranger2010::processFrame(FrameDB* db,string ifName, can_frame_t frame, tim
 
 		case 0x21B:	//Fuel level
 		{
-			float level = 	( frame.data[5] / 160.0 );
+			float level = 	( (frame.data[5]  * 100.) / 160.0 );
 			db->updateValue(schemaKeyForValueKey(FUEL_LEVEL), to_string(level), when);
 		}
 			break;
