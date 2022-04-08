@@ -135,7 +135,7 @@ static bool OBDCmdHandler( stringvector 		line,
 			for(uint8_t i = 0; i < 0xC0; i++){
 				success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, i, 0x00, 0x00, 0x00, 0x00, 0x00 }, &errnum);
 				if(!success) break;
-				usleep(1000);
+				usleep(10000);
 			}
 		}
 		else if(cmdStr == "pid1"){
@@ -149,6 +149,9 @@ static bool OBDCmdHandler( stringvector 		line,
 		}
 		else if(cmdStr == "volts"){
 			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
+		}
+		else if(cmdStr == "fuel"){
+			success = canBus->sendFrame(portStr, can_id, {0x02, 0x01, 0x2F, 0x00, 0x00, 0x00, 0x00, 0x00}, &errnum);
 		}
 		else if(cmdStr == "clearDTC"){
 			success = canBus->sendFrame(portStr, can_id, {0x04}, &errnum);

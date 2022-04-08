@@ -10,6 +10,7 @@
 		2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4227F76EEA00C0CBB1 /* OLF.log */; };
 		2E645E4727FE456900C0CBB1 /* pids.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4627FE455D00C0CBB1 /* pids.log */; };
 		2E645E4927FE863000C0CBB1 /* dtc.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4827FE858A00C0CBB1 /* dtc.log */; };
+		2E645E4C27FF8D2900C0CBB1 /* pids2.log in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E645E4B27FF8D1B00C0CBB1 /* pids2.log */; };
 		2EFC242827E926DC00DB9D1F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC242527E926DC00DB9D1F /* main.cpp */; };
 		2EFC244927E92B2200DB9D1F /* CmdLineBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244127E92B2200DB9D1F /* CmdLineBuffer.cpp */; };
 		2EFC244A27E92B2200DB9D1F /* CmdLineMgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2EFC244327E92B2200DB9D1F /* CmdLineMgr.cpp */; };
@@ -39,6 +40,7 @@
 				2EFC247B27ECC67700DB9D1F /* jeep.log in CopyFiles */,
 				2EFC246527EA2D0400DB9D1F /* chevy1.log in CopyFiles */,
 				2E645E4327F76EF400C0CBB1 /* OLF.log in CopyFiles */,
+				2E645E4C27FF8D2900C0CBB1 /* pids2.log in CopyFiles */,
 				2EFC249427EE8EAA00DB9D1F /* t0.log in CopyFiles */,
 				2EFC249227EE7F2E00DB9D1F /* jeep1.log in CopyFiles */,
 				2E645E4927FE863000C0CBB1 /* dtc.log in CopyFiles */,
@@ -54,6 +56,7 @@
 		2E645E4227F76EEA00C0CBB1 /* OLF.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = OLF.log; sourceTree = "<group>"; };
 		2E645E4627FE455D00C0CBB1 /* pids.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = pids.log; sourceTree = "<group>"; };
 		2E645E4827FE858A00C0CBB1 /* dtc.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = dtc.log; sourceTree = "<group>"; };
+		2E645E4B27FF8D1B00C0CBB1 /* pids2.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = pids2.log; sourceTree = "<group>"; };
 		2EFC241727E926AF00DB9D1F /* canhacker */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = canhacker; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EFC242527E926DC00DB9D1F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = src/main.cpp; sourceTree = "<group>"; };
 		2EFC242B27E926F300DB9D1F /* can_raw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = can_raw.h; path = macincludes/can_raw.h; sourceTree = "<group>"; };
@@ -185,6 +188,7 @@
 				2EFC247A27ECC67300DB9D1F /* jeep.log */,
 				2EFC249127EE7F1F00DB9D1F /* jeep1.log */,
 				2E645E4627FE455D00C0CBB1 /* pids.log */,
+				2E645E4B27FF8D1B00C0CBB1 /* pids2.log */,
 				2EFC249327EE8EA300DB9D1F /* t0.log */,
 				2E645E4227F76EEA00C0CBB1 /* OLF.log */,
 				2E645E4827FE858A00C0CBB1 /* dtc.log */,
