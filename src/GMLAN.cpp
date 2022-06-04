@@ -321,16 +321,19 @@ void GMLAN::processEngineGenStatus5(FrameDB* db, can_frame_t frame, time_t when)
 	bitset<8> byte6 = frame.data[6];
  
 	
-	if(byte0.test(6)){ //Engine Oil Pressure Validity
-		float oilpress =  (frame.data[2] * 4);
-		db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when);
-	}
-	
-	if(byte0.test(7)){ //Engine Oil Temperature Validity
-		float oiltemp =  (frame.data[1] - 40);
-		db->updateValue(schemaKeyForValueKey(TEMP_OIL), to_string(oiltemp),when);
-	}
-	
+/// Note: I have suspct about the validity
+	//	if(byte0.test(6)) //Engine Oil Pressure Validity
+	 {
+		 float oilpress =  (frame.data[2] * 4);
+		 db->updateValue(schemaKeyForValueKey(PRESSURE_OIL), to_string(oilpress),when);
+	 }
+	 
+		if(byte0.test(7)) //Engine Oil Temperature Validity
+	 {
+		 float oiltemp =  (frame.data[1] - 40);
+		 db->updateValue(schemaKeyForValueKey(TEMP_OIL), to_string(oiltemp),when);
+	 }
+
 	bool oilLow =  byte0.test(4);
 	db->updateValue(schemaKeyForValueKey(GM_OIL_LOW), to_string(oilLow),when);
 
