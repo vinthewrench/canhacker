@@ -362,6 +362,11 @@ void CANBusMgr::CANThread() {
 	FrameDB* frameDB = FrameDB::shared();
 	struct can_frame frame;
 
+	struct timeval one_second_tv = { 1, 0 };
+
+	struct timeval lastTime;
+	gettimeofday(&lastTime, NULL);
+
 	while(_running){
 		
 		/* wait for something to happen on the socket */
@@ -378,22 +383,30 @@ void CANBusMgr::CANThread() {
 			_running = false;
 		}
 		
-		/* check which fd is avaialbe for read */
+		struct timeval now,  diff;
+		gettimeofday(&now, NULL);
+		unsigned long timestamp_secs = (now.tv_sec * 100 ) + (now.tv_usec / 10000);
+		timersub(&now, &lastTime,  &diff);
+
+		unsigned long timestamp_diff = (diff.tv_sec * 100 ) + (diff.tv_usec / 10000);
+		
+		// did more than a second go by
+		if(timercmp(&diff, &one_second_tv, >)){
+				lastTime = now;
+		
+
+		}
+
+		/* check which fd is available for read */
 		for (auto& [ifName, fd]  : _interfaces) {
 			if ((fd != -1)  && FD_ISSET(fd, &dup)) {
-		 
-				struct timeval tv;
-				gettimeofday(&tv, NULL);
-	
-				unsigned long timestamp = (tv.tv_sec * 100 ) + (tv.tv_usec / 10000);
- 
 				size_t nbytes = read(fd, &frame, sizeof(struct can_frame));
 				
 				if(nbytes == 0){ // shutdown
 					_interfaces[ifName] = -1;
 				}
 				else if(nbytes > 0){
-					frameDB->saveFrame(ifName, frame, timestamp);
+					frameDB->saveFrame(ifName, frame, timestamp_secs);
 				}
 			}
 		}
