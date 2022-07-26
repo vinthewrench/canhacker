@@ -1,2 +1,5 @@
-# odbtool
-ODB tool for SocketCan
+# canhacker
+
+a simple tool for decoding GM and jeep JK can traffic.
+
+
