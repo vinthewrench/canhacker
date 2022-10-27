@@ -30,8 +30,8 @@ private:
 									uint8_t mode, uint8_t pid, uint16_t len, uint8_t* data);
 			 
 	typedef struct {
-		uint8_t			mode;
 		canid_t			can_id;
+		uint8_t			mode;
 		uint8_t			pid;
 		uint8_t			rollingcnt; 	// next expected cnt
 		uint16_t			total_len;

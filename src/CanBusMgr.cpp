@@ -265,6 +265,9 @@ void CANBusMgr::readFileThread(std::ifstream	*ifs, bool nodelay, voidCallback_t 
 			while(*p) {
 				uint8_t b1;
 				
+				if(isspace(*p))
+					break;
+ 
 				if(sscanf(p, "%02hhx", &b1) != 1){
 					failed = true;
 					break;

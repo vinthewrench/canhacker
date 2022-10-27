@@ -16,6 +16,8 @@
 #include <bitset>
 #include <strings.h>
 #include <cstring>
+#include <utility>
+
 
 #include "CanProtocol.hpp"
 
@@ -52,7 +54,16 @@ class FrameDB {
 	bool registerProtocol(string ifName,  CanProtocol *protocol = NULL);
 	void unRegisterProtocol(string ifName, CanProtocol *protocol);
 	vector<CanProtocol*>	protocolsForTag(frameTag_t tag);
-
+ 
+	// frame decoders
+	typedef std::function<void(void* context,
+										string ifName, canid_t can_id,
+										can_frame_t frame, unsigned long timeStamp)> frameDecoderCB_t;
+	
+	bool registerFrameDecoder(string ifName, canid_t can_id,  frameDecoderCB_t  cb = NULL, void* context = NULL);
+	void unRegisterFrameDecoder(string ifName, canid_t can_id, frameDecoderCB_t cb );
+	vector<pair<frameDecoderCB_t, void*>>	decoderForFrame(string ifName, canid_t can_id);
+ 
 	eTag_t lastEtag() { return  _lastEtag;};
  
 // Frame database
@@ -157,6 +168,16 @@ private:
 	map<string_view, valueSchema_t>			_schema;
 	map<string_view, vector <uint8_t>>		_odb_request;
 	map<string_view, value_t> _values;
+	
+	typedef struct {
+		string 				ifName;
+		canid_t 				can_id;
+		frameDecoderCB_t	cb;
+		void					*context;
+	} frame_decoders_t;
+
+	vector<frame_decoders_t> _frame_decoders = {};
+	
   };
 
 

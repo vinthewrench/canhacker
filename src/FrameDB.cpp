@@ -28,7 +28,7 @@ FrameDB::FrameDB(){
 	_schema.clear();
 	_values.clear();
 	_odb_request.clear();
-
+	_frame_decoders.clear();
 }
 
 FrameDB::~FrameDB(){
@@ -114,6 +114,51 @@ vector<CanProtocol*>	FrameDB::protocolsForTag(frameTag_t tag){
  	return protos;
 }
 
+// MARK: -  Frame Decoders
+bool FrameDB::registerFrameDecoder(string ifName, canid_t can_id,  frameDecoderCB_t cb, void* context){
+	
+	for( auto item: _frame_decoders){
+		if(item.ifName == ifName
+			&& item.can_id == can_id
+			&& item.context == context)
+			return false;
+	}
+ 
+	frame_decoders_t decoder = {
+		.ifName = ifName,
+		.can_id = can_id,
+		.cb = cb,
+		.context = context
+	};
+	
+	_frame_decoders.push_back(decoder);
+	
+	return true;
+}
+
+void FrameDB::unRegisterFrameDecoder(string ifName, canid_t can_id, frameDecoderCB_t cb ){
+	
+	_frame_decoders.erase(
+		 std::remove_if(_frame_decoders.begin(), _frame_decoders.end(),
+							 [](const frame_decoders_t & item) { return false; }),
+								 _frame_decoders.end());
+}
+
+vector<pair<FrameDB::frameDecoderCB_t, void*> >	FrameDB::decoderForFrame(string ifName, canid_t can_id){
+	vector<pair<FrameDB::frameDecoderCB_t, void*>> decoders = {};
+	
+	for( auto item: _frame_decoders){
+		if(item.ifName == ifName
+			&& item.can_id == can_id ){
+ 			decoders.push_back(make_pair(item.cb, item.context));
+		}
+	}
+
+	return decoders;
+}
+
+
+// MARK: -  Schemas
 
 FrameDB::valueSchema_t FrameDB::schemaForKey(string_view key){
 	valueSchema_t schema = {"", "", UNKNOWN};
@@ -230,6 +275,15 @@ void  FrameDB::saveFrame(string ifName, can_frame_t frame, unsigned long  timeSt
 	auto theFrames = &m1->second.frames;
 	auto theProtocols = &m1->second.protocols;
 
+	auto decoders = decoderForFrame(ifName, can_id );
+	for(auto d : decoders){
+		frameDecoderCB_t	cb = d.first;
+		void* context 			= d.second;
+		
+		if(cb) (cb)(context,ifName, can_id, frame, timeStamp);
+	}
+	
+	
 	size_t count =  theFrames->count(can_id);
 	if( count == 0){
 		// create new frame entry
