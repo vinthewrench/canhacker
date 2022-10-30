@@ -114,25 +114,41 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 
 
 
-  static map<uint8_t,  valueSchema_t> _radio_schemaMap = {
-	  {0x09,		{"JKR_09",			"Radio PID 09",	 FrameDB::DATA}},
-	  {0x0E,		{"JKR_0E",			"Radio PID 0E",	 FrameDB::DATA}},
-	  {0x10,		{"JKR_10",			"Radio PID 10",	 FrameDB::DATA}},
-	  {0x11,		{"JKR_11",			"Radio PID 11",	 FrameDB::DATA}},
-	  {0x12,		{"JKR_12",			"Radio PID 12",	 FrameDB::DATA}},
-	  {0x18,		{"JKR_18",			"Radio PID 18",	 FrameDB::DATA}},
-	  {0x30,		{"JKR_30",			"Radio PID 30",	 FrameDB::DATA}},
-	  {0x34,		{"JKR_34",			"Radio PID 34",	 FrameDB::DATA}},
-	  {0x35,		{"JKR_35",			"Radio PID 35",	 FrameDB::DATA}},
-	  {0x36,		{"JKR_36",			"Radio PID 36",	 FrameDB::DATA}},
-	  {0x44,		{"JKR_VIN",			"Radio PID VIN",	 FrameDB::STRING}},
+  static map<uint16_t,  valueSchema_t> _radio_schemaMap = {
+	  {0x1A87,		{"JKR_ECU",				"ECU part",		 	FrameDB::STRING}},
+	  {0x1A88,		{"JKR_VIN_O",			"VIN original",	 FrameDB::STRING}},
+	  {0x1A90,		{"JKR_VIN_C",			"VIN current",		 FrameDB::STRING}},
 
-	  {0x49,		{"JKR_49",			"Radio PID 49",	 FrameDB::DATA}},
-	  {0x50,		{"JKR_50",			"Radio PID 50",	 FrameDB::DATA}},
-	  {0x52,		{"JKR_52",			"Radio PID 52",	 FrameDB::DATA}},
-	  {0xEA,		{"JKR_EA",			"Radio PID EA",	 FrameDB::DATA}},
+	  {0x2109,		{"JKR 0x09",			"Radio PID 09",	 FrameDB::DATA}},
+	  {0x210E,		{"JKR 0x0E",			"Radio PID 0E",	 FrameDB::DATA}},
+	  {0x2110,		{"JKR 0x10",			"Radio PID 10",	 FrameDB::DATA}},
+	  {0x2111,		{"JKR VOLUME",			"Radio PID 11",	 FrameDB::DATA}},
+	  {0x2112,		{"JKR 0x12",			"Radio PID 12",	 FrameDB::DATA}},
+	  {0x2116,		{"JKR MODEL",			"Radio PID 18",	 FrameDB::DATA}},
+
+	  {0x2118,		{"JKR 0x18",			"Radio PID 18",	 FrameDB::DATA}},
+	  {0x2118,		{"JKR 0x16",			"Radio PID 16",	 FrameDB::DATA}},
+	  {0x2125,		{"JKR SIRIUS",			"Radio Sirius ID",	 FrameDB::STRING}},
+	  {0x2130,		{"JKR 0x30",			"Radio PID 30",	 FrameDB::DATA}},
+	  {0x2134,		{"JKR 0x34",			"Radio PID 34",	 FrameDB::DATA}},
+	  {0x2135,		{"JKR 0x35",			"Radio PID 35",	 FrameDB::DATA}},
+	  {0x2136,		{"JKR 0x36",			"Radio PID 36",	 FrameDB::DATA}},
+	  {0x2144,		{"JKR VIN",				"Radio PID VIN",	 FrameDB::STRING}},
+
+	  {0x2149,		{"JKR 0x49",			"Radio PID 49",	 FrameDB::DATA}},
+	  {0x2150,		{"JKR 0x50",			"Radio PID 50",	 FrameDB::DATA}},
+	  {0x2152,		{"JKR 0x52",			"Radio PID 52",	 FrameDB::DATA}},
+	  {0x21E1,		{"JKR SER",				"Radio Serial Num",	 FrameDB::STRING}},
+	  {0x21EA,		{"JKR 0xEA",			"Radio PID EA",	 FrameDB::DATA}},
  };
 
+static map<uint16_t,  valueSchema_t> _amp_schemaMap = {
+	{0x1A87,		{"JKA_ECU",				"ECU part",		 	FrameDB::STRING}},
+	{0x2110,		{"JKA 21 10",				"JKA 15 10",		 	FrameDB::DATA}},
+	{0x2113,		{"JKA 21 13",				"JKA 15 13",		 	FrameDB::DATA}},
+	{0x21EA,		{"JKA 21 EA",				"JKA 15 EA",		 	FrameDB::DATA}},
+	{0x3F21,		{"JKA 3F 21",				"JKA 3f 21",		 	FrameDB::DATA}},
+};
 
 
 Wranger2010::Wranger2010(){
@@ -153,14 +169,23 @@ void Wranger2010::registerSchema(FrameDB* db){
 	}
  
 	for (auto it = _radio_schemaMap.begin(); it != _radio_schemaMap.end(); it++){
-		valueSchema_t*  schema = &it->second;
-		db->addSchema(schema->title,  {schema->title, schema->description, schema->units});
+		uint16_t b = it->first;
+		vector<uint8_t> request =  {static_cast<uint8_t>(b >> 8) , static_cast<uint8_t>(b & 0xff)};
+ 		valueSchema_t*  schema = &it->second;
+		db->addSchema(schema->title,  {schema->title, schema->description, schema->units}, request);
 	}
+	for (auto it = _amp_schemaMap.begin(); it != _amp_schemaMap.end(); it++){
+		uint16_t b = it->first;
+		vector<uint8_t> request =  {static_cast<uint8_t>(b >> 8) , static_cast<uint8_t>(b & 0xff)};
+		valueSchema_t*  schema = &it->second;
+		db->addSchema(schema->title,  {schema->title, schema->description, schema->units}, request);
+	}
+ 
 
 	db->registerFrameDecoder("can0", 0x6B0, processRadioFrameWrapper, this);
 	db->registerFrameDecoder("can0", 0x516, processRadioFrameWrapper, this);
-	//	db->registerFrameDecoder("can0", 0x53E, processRadioFrameWrapper, this);
-	//	db->registerFrameDecoder("can0", 0x7F0, processRadioFrameWrapper, this);
+		db->registerFrameDecoder("can0", 0x53E, processRadioFrameWrapper, this);
+		db->registerFrameDecoder("can0", 0x7F0, processRadioFrameWrapper, this);
 }
 
 string_view Wranger2010::schemaKeyForValueKey(int valueKey) {
@@ -431,8 +456,8 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 												  canid_t can_id,
 												  bool isRequest,  uint8_t service_id,
 												  uint16_t len, uint8_t* data){
-
- 	//	if(!isRequest){
+	
+	//	if(!isRequest){
 	//
 	//	}
 	
@@ -451,8 +476,11 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 		return;
 	}
 	
-	if(! (service_id == 0x21 || service_id == 0x1A)){
-		printf("\nStrange ID %3x: %s (%02X) \n",
+	if(! (service_id == 0x21
+			|| service_id == 0x1A
+			|| service_id == 0x3F  // AMP
+		) ){
+		printf("\r\nStrange ID %3x: %s (%02X) \n\r",
 				 can_id, isRequest?"REQ":"RSP",  service_id);
 		return;
 	}
@@ -465,20 +493,22 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 		len--;
 		data++;
 		
+		uint16_t ext = (service_id << 8) | pid;
+
 		if(isRequest) return;
-	 
+		
 		// check for radio VIN
 		if(pid == 0x44){
 			static int stage = 0;
 			
 			static char VIN[22] = {0};
-		 
+			
 			if(stage == 0)
 				memset(VIN, 0, sizeof(VIN));
 			
 			// bad value
 			uint8_t b0 = data[7];
-		
+			
 			switch (b0) {
 				case 0:
 					memcpy( &VIN[0], &data[0], 7);
@@ -497,45 +527,89 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 			}
 			
 			if(stage == 3){
-				valueSchema_t*  schema = &_radio_schemaMap[pid];
+		 
+				valueSchema_t*  schema = &_radio_schemaMap[ext];
 				db->updateValue(schema->title, 	string(VIN), when);
 				stage = 0;
- 			}
-
- 		}
- 		else if(_radio_schemaMap.count(pid)){
-			valueSchema_t*  schema = &_radio_schemaMap[pid];
+			}
 			
-			string value = hexStr(data,len);
+		}
+		
+		// amplifier response on 516
+		else if(can_id	== 0x516 &&   _radio_schemaMap.count(ext)){
+			valueSchema_t*  schema = &_radio_schemaMap[ext];
+			
+			string value = "";
+			if(ext == 0x1A87){
+				// could be that bytes 0,1,2 are variant 02 AMP NTG4 [02,78,02]
+				// could be that byte 4 is supplier FF  Harmon Becker
+
+				value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
+				+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
+			   + "Diag:("+ to_hex(data[3]) +") "
+ 				+ "Part:" + string( (char*)data+10, len -10);
+ 
+			}else	if(schema->units == FrameDB::STRING) {
+				value = string( (char*)data, len);
+			}
+			else if(schema->units == FrameDB::DATA){
+				value = hexStr(data,len );
+			}
+			
 			db->updateValue(schema->title, value, when);
 			
 		}
-	 
-//
-//		printf("%02X  ",  pid);
-//
-//		if(len > 0){
-//			printf("%2d: ", len);
-//			for(int i = 0; i < len; i++)
-//				printf("%02x ", data[i]);
-//
-//			if(len > 8){
-//				printf("\r\n\t\t|");
-//				for(int i = 0; i < len; i++){
-//					uint8_t c =  data[i];
-//					if (c > ' ' && c < '~')
-//						printf("%c", data[i]);
-//					else {
-//						printf(".");
-//					}
-//				}
-//				printf("|");
-//
-//			}
-//
-//		}
-//		printf("\r\n");
-//
+		// amplifier response on 53E
+		else if(can_id	== 0x53E &&   _amp_schemaMap.count(ext)){
+			valueSchema_t*  schema = &_amp_schemaMap[ext];
+			
+			string value = "";
+			if(ext == 0x1A87){
+				// could be that bytes 0,1,2 are variant 02  NTG4 [02,84,02]
+				// could be that byte 4 is supplier 80 = Siemens VDO
+	
+				value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
+				+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
+				+ "Diag:("+ to_hex(data[3]) +") "
+				+ "Part:" + string( (char*)data+10, len -10);
+ 
+			}else	if(schema->units == FrameDB::STRING) {
+				value = string( (char*)data, len);
+			}
+			else if(schema->units == FrameDB::DATA){
+				value = hexStr(data,len );
+			}
+			
+			db->updateValue(schema->title, value, when);
+ 		}
+
+		else {
+			printf("(%02x,%02X)  ", service_id, pid);
+
+			if(len > 0){
+				printf("%2d: ", len);
+				for(int i = 0; i < len; i++)
+					printf("%02x ", data[i]);
+
+				if(len > 8){
+					printf("\r\n\t\t|");
+					for(int i = 0; i < len; i++){
+						uint8_t c =  data[i];
+						if (c > ' ' && c < '~')
+							printf("%c", data[i]);
+						else {
+							printf(".");
+						}
+					}
+					printf("|");
+
+				}
+
+			}
+			printf("\r\n");
+			
+			
+		}
 	}
 	
 	
