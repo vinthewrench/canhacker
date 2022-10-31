@@ -112,8 +112,6 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	{VIN,						{"JK_VIN",							"Vehicle Identification Number",		FrameDB::STRING}},
 };
 
-
-
   static map<uint16_t,  valueSchema_t> _radio_schemaMap = {
 	  {0x1A87,		{"JKR_ECU",				"ECU part",		 	FrameDB::STRING}},
 	  {0x1A88,		{"JKR_VIN_O",			"VIN original",	 FrameDB::STRING}},
@@ -140,6 +138,8 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
 	  {0x2152,		{"JKR 0x52",			"Radio PID 52",	 FrameDB::DATA}},
 	  {0x21E1,		{"JKR SER",				"Radio Serial Num",	 FrameDB::STRING}},
 	  {0x21EA,		{"JKR 0xEA",			"Radio PID EA",	 FrameDB::DATA}},
+	  {0x1800,		{"JKR DTC",					"JKR DTC",		 	FrameDB::DTC}},
+
  };
 
 static map<uint16_t,  valueSchema_t> _amp_schemaMap = {
@@ -478,8 +478,8 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 		return;
 	}
 	
-	if(! (service_id == 0x21
-			|| service_id == 0x1A
+	if(! (service_id == 0x21		// Radio
+			|| service_id == 0x1A // Radio
 			|| service_id == 0x3F  // AMP
 			
 			|| service_id == 0x18  // AMP
@@ -544,29 +544,57 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 		}
 		
 		// Radio response on 516
-		else if(can_id	== 0x516 &&   _radio_schemaMap.count(ext)){
-			valueSchema_t*  schema = &_radio_schemaMap[ext];
+		else if(can_id	== 0x516) {
 			
-			string value = "";
-			if(ext == 0x1A87){
-				// could be that bytes 0,1,2 are variant 02 AMP NTG4 [02,78,02]
-				// could be that byte 4 is supplier FF  Harmon Becker
-
-				value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
-				+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
-			   + "Diag:("+ to_hex(data[3]) +") "
- 				+ "Part:" + string( (char*)data+10, len -10);
- 
-			}else	if(schema->units == FrameDB::STRING) {
-				value = string( (char*)data, len);
+			if(service_id == 0x18) {
+			/*
+			 AMP DTC code is different than ODB DTC code
+			
+			 looks like [6]   94 86 60 94 81 60
+			 which is "B1486 B1481"  the 0x60 is an unknown?
+		
+			 */
+				static char codechar[4] = {'P', 'C', 'B', 'U'};
+				string value = "";
+				for( int i = 0; i < len; i +=2){
+					string DTC;
+					if( len - 3 < 0 ) break;	// error check for short packets
+					DTC = string(1, codechar[data[i] >> 6]) ;	 // the upper 2 bits of the first byte
+					DTC+=	to_string((data[i] >> 4) & 0b0011);
+					DTC+=	to_string(data[i] & 0xf);
+					DTC+=	to_string(data[i+1] >> 4 );
+					DTC+=	to_string(data[i+1] & 0xf);
+					i++; // skip the 0x60
+					value += DTC + " ";
+				}
+				valueSchema_t*  schema = &_amp_schemaMap[0x1800];
+				db->updateValue(schema->title, value, when);
+	 
 			}
-			else if(schema->units == FrameDB::DATA){
-				value = hexStr(data,len );
+			else	if(_radio_schemaMap.count(ext)){
+				valueSchema_t*  schema = &_radio_schemaMap[ext];
+				
+				string value = "";
+				if(ext == 0x1A87){
+					// could be that bytes 0,1,2 are variant 02 AMP NTG4 [02,78,02]
+					// could be that byte 4 is supplier FF  Harmon Becker
+					
+					value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
+					+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
+					+ "Diag:("+ to_hex(data[3]) +") "
+					+ "Part:" + string( (char*)data+10, len -10);
+					
+				}else	if(schema->units == FrameDB::STRING) {
+					value = string( (char*)data, len);
+				}
+				else if(schema->units == FrameDB::DATA){
+					value = hexStr(data,len );
+				}
+				
+				db->updateValue(schema->title, value, when);
+				
 			}
-			
-			db->updateValue(schema->title, value, when);
-			
-		}
+ 		}
 		// amplifier response on 53E
 		else if(can_id	== 0x53E){
 			
