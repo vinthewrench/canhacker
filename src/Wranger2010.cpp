@@ -143,11 +143,13 @@ static map<value_keys_t,  valueSchema_t> _schemaMap = {
  };
 
 static map<uint16_t,  valueSchema_t> _amp_schemaMap = {
-	{0x1A87,		{"JKA_ECU",				"ECU part",		 	FrameDB::STRING}},
-	{0x2110,		{"JKA 21 10",				"JKA 15 10",		 	FrameDB::DATA}},
-	{0x2113,		{"JKA 21 13",				"JKA 15 13",		 	FrameDB::DATA}},
-	{0x21EA,		{"JKA 21 EA",				"JKA 15 EA",		 	FrameDB::DATA}},
-	{0x3F21,		{"JKA 3F 21",				"JKA 3f 21",		 	FrameDB::DATA}},
+	{0x1A87,		{"JKA_ECU",					"ECU part",		 	FrameDB::STRING}},
+	{0x2110,		{"JKA CABIN",				"JKA CABIN",		 	FrameDB::INT}},
+	{0x2113,		{"JKA BATV",				"JKA BATV",		 	FrameDB::VOLTS}},
+	{0x21EA,		{"JKA 21/EA",				"JKA 21/EA",		 	FrameDB::DATA}},
+	{0x3F21,		{"JKA 3F/21",				"JKA 3F/21",		 	FrameDB::DATA}},
+ 	{0x1800,		{"JKA DTC",					"JKA DTC",		 	FrameDB::DTC}},
+
 };
 
 
@@ -479,6 +481,12 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 	if(! (service_id == 0x21
 			|| service_id == 0x1A
 			|| service_id == 0x3F  // AMP
+			
+			|| service_id == 0x18  // AMP
+			|| service_id == 0x10  // AMP
+			|| service_id == 0x14  // AMP
+
+
 		) ){
 		printf("\r\nStrange ID %3x: %s (%02X) \n\r",
 				 can_id, isRequest?"REQ":"RSP",  service_id);
@@ -535,7 +543,7 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 			
 		}
 		
-		// amplifier response on 516
+		// Radio response on 516
 		else if(can_id	== 0x516 &&   _radio_schemaMap.count(ext)){
 			valueSchema_t*  schema = &_radio_schemaMap[ext];
 			
@@ -560,56 +568,95 @@ void   Wranger2010::processPrivateODB(FrameDB* db,time_t when,
 			
 		}
 		// amplifier response on 53E
-		else if(can_id	== 0x53E &&   _amp_schemaMap.count(ext)){
-			valueSchema_t*  schema = &_amp_schemaMap[ext];
+		else if(can_id	== 0x53E){
 			
-			string value = "";
-			if(ext == 0x1A87){
-				// could be that bytes 0,1,2 are variant 02  NTG4 [02,84,02]
-				// could be that byte 4 is supplier 80 = Siemens VDO
-	
-				value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
-				+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
-				+ "Diag:("+ to_hex(data[3]) +") "
-				+ "Part:" + string( (char*)data+10, len -10);
- 
-			}else	if(schema->units == FrameDB::STRING) {
-				value = string( (char*)data, len);
-			}
-			else if(schema->units == FrameDB::DATA){
-				value = hexStr(data,len );
-			}
+			if(service_id == 0x18) {
+			/*
+			 AMP DTC code is different than ODB DTC code
 			
-			db->updateValue(schema->title, value, when);
- 		}
-
-		else {
-			printf("(%02x,%02X)  ", service_id, pid);
-
-			if(len > 0){
-				printf("%2d: ", len);
-				for(int i = 0; i < len; i++)
-					printf("%02x ", data[i]);
-
-				if(len > 8){
-					printf("\r\n\t\t|");
-					for(int i = 0; i < len; i++){
-						uint8_t c =  data[i];
-						if (c > ' ' && c < '~')
-							printf("%c", data[i]);
-						else {
-							printf(".");
-						}
-					}
-					printf("|");
-
+			 looks like [6]   94 86 60 94 81 60
+			 which is "B1486 B1481"  the 0x60 is an unknown?
+		
+			 */
+				static char codechar[4] = {'P', 'C', 'B', 'U'};
+				string value = "";
+				for( int i = 0; i < len; i +=2){
+					string DTC;
+					if( len - 3 < 0 ) break;	// error check for short packets
+					DTC = string(1, codechar[data[i] >> 6]) ;	 // the upper 2 bits of the first byte
+					DTC+=	to_string((data[i] >> 4) & 0b0011);
+					DTC+=	to_string(data[i] & 0xf);
+					DTC+=	to_string(data[i+1] >> 4 );
+					DTC+=	to_string(data[i+1] & 0xf);
+					i++; // skip the 0x60
+					value += DTC + " ";
 				}
-
+				valueSchema_t*  schema = &_amp_schemaMap[0x1800];
+				db->updateValue(schema->title, value, when);
+	 
+			} else
+			if( _amp_schemaMap.count(ext)){
+				valueSchema_t*  schema = &_amp_schemaMap[ext];
+				
+				string value = "";
+				if(ext == 0x1A87){
+					// could be that bytes 0,1,2 are variant 02  NTG4 [02,84,02]
+					// could be that byte 4 is supplier 80 = Siemens VDO
+					
+					value = 	"HW:("+ to_hex(data[5]) + "," + to_hex(data[6])+ ") SW:("
+					+ to_hex(data[7]) + "," + to_hex(data[8])+ "," + to_hex(data[9])+ ") "
+					+ "Diag:("+ to_hex(data[3]) +") "
+					+ "Part:" + string( (char*)data+10, len -10);
+					
+				}
+				else if(ext == 0x2113){  // Battery voltage
+					float volts = data[0] * .1;
+					value = to_string(volts);
+ 				}
+				else if(ext == 0x2110){  // Cabin equalization curve
+					uint curve = data[0] ;
+					value = to_string(curve);
+				}
+ 				else	if(schema->units == FrameDB::STRING) {
+					value = string( (char*)data, len);
+				}
+				else if(schema->units == FrameDB::DATA){
+					value = hexStr(data,len );
+				}
+				
+				db->updateValue(schema->title, value, when);
+				
 			}
-			printf("\r\n");
-			
 			
 		}
+//
+//		else {
+//			printf("(%02x,%02X)  ", service_id, pid);
+//
+//			if(len > 0){
+//				printf("%2d: ", len);
+//				for(int i = 0; i < len; i++)
+//					printf("%02x ", data[i]);
+//
+//				if(len > 8){
+//					printf("\r\n\t\t|");
+//					for(int i = 0; i < len; i++){
+//						uint8_t c =  data[i];
+//						if (c > ' ' && c < '~')
+//							printf("%c", data[i]);
+//						else {
+//							printf(".");
+//						}
+//					}
+//					printf("|");
+//
+//				}
+//
+//			}
+//			printf("\r\n");
+//
+//
+//		}
 	}
 	
 	

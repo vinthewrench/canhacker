@@ -475,7 +475,7 @@ static string valueForData(canid_t can_id, uint8_t mode, uint8_t pid,
 			string DTC;
 			if( len - 2 < 0 ) break;	// error check for short packets
 			DTC = string(1, codechar[data[i] >> 6]) ;	 // the upper 2 bits of the first byte
-			DTC+=	to_string((data[i] >> 6) & 0b0011);
+			DTC+=	to_string((data[i] >> 4) & 0b0011);
 			DTC+=	to_string(data[i] & 0xf);
 			DTC+=	to_string(data[i+1] >> 4 );
 			DTC+=	to_string(data[i+1] & 0xf);
